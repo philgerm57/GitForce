@@ -1,0 +1,153 @@
+﻿namespace GitForce.Settings.Panels
+{
+    partial class ControlOptions
+    {
+        /// <summary> 
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary> 
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Component Designer generated code
+
+        /// <summary> 
+        /// Required method for Designer support - do not modify 
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            this.checkBoxTabs = new System.Windows.Forms.CheckBox();
+            this.checkBoxWarnMultipleInstances = new System.Windows.Forms.CheckBox();
+            this.checkBoxAutoCloseGitOnSuccess = new System.Windows.Forms.CheckBox();
+            this.checkBoxWarnIfAdmin = new System.Windows.Forms.CheckBox();
+            this.checkBoxWarnOnDetachedHead = new System.Windows.Forms.CheckBox();
+            this.labelTheme = new System.Windows.Forms.Label();
+            this.comboBoxTheme = new System.Windows.Forms.ComboBox();
+            this.labelThemeNote = new System.Windows.Forms.Label();
+            this.SuspendLayout();
+            // 
+            // checkBoxTabs
+            // 
+            this.checkBoxTabs.AutoSize = true;
+            this.checkBoxTabs.Location = new System.Drawing.Point(3, 3);
+            this.checkBoxTabs.Name = "checkBoxTabs";
+            this.checkBoxTabs.Size = new System.Drawing.Size(159, 17);
+            this.checkBoxTabs.TabIndex = 0;
+            this.checkBoxTabs.Text = "Show tabs on the right pane";
+            this.checkBoxTabs.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxWarnMultipleInstances
+            // 
+            this.checkBoxWarnMultipleInstances.AutoSize = true;
+            this.checkBoxWarnMultipleInstances.Location = new System.Drawing.Point(3, 26);
+            this.checkBoxWarnMultipleInstances.Name = "checkBoxWarnMultipleInstances";
+            this.checkBoxWarnMultipleInstances.Size = new System.Drawing.Size(268, 17);
+            this.checkBoxWarnMultipleInstances.TabIndex = 1;
+            this.checkBoxWarnMultipleInstances.Text = "&Warn before starting additional instance of GitForce";
+            this.checkBoxWarnMultipleInstances.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxAutoCloseGitOnSuccess
+            // 
+            this.checkBoxAutoCloseGitOnSuccess.AutoSize = true;
+            this.checkBoxAutoCloseGitOnSuccess.Location = new System.Drawing.Point(3, 72);
+            this.checkBoxAutoCloseGitOnSuccess.Name = "checkBoxAutoCloseGitOnSuccess";
+            this.checkBoxAutoCloseGitOnSuccess.Size = new System.Drawing.Size(211, 17);
+            this.checkBoxAutoCloseGitOnSuccess.TabIndex = 3;
+            this.checkBoxAutoCloseGitOnSuccess.Text = "&Close git command window on success";
+            this.checkBoxAutoCloseGitOnSuccess.UseVisualStyleBackColor = true;
+            //
+            // checkBoxWarnIfAdmin
+            //
+            this.checkBoxWarnIfAdmin.AutoSize = true;
+            this.checkBoxWarnIfAdmin.Location = new System.Drawing.Point(3, 49);
+            this.checkBoxWarnIfAdmin.Name = "checkBoxWarnIfAdmin";
+            this.checkBoxWarnIfAdmin.Size = new System.Drawing.Size(143, 17);
+            this.checkBoxWarnIfAdmin.TabIndex = 2;
+            this.checkBoxWarnIfAdmin.Text = "Warn if starting as &Admin";
+            this.checkBoxWarnIfAdmin.UseVisualStyleBackColor = true;
+            //
+            // checkBoxWarnOnDetachedHead
+            //
+            this.checkBoxWarnOnDetachedHead.AutoSize = true;
+            this.checkBoxWarnOnDetachedHead.Location = new System.Drawing.Point(3, 95);
+            this.checkBoxWarnOnDetachedHead.Name = "checkBoxWarnOnDetachedHead";
+            this.checkBoxWarnOnDetachedHead.Size = new System.Drawing.Size(277, 17);
+            this.checkBoxWarnOnDetachedHead.TabIndex = 4;
+            this.checkBoxWarnOnDetachedHead.Text = "Warn when switching to a &detached HEAD repository";
+            this.checkBoxWarnOnDetachedHead.UseVisualStyleBackColor = true;
+            //
+            // labelTheme
+            //
+            this.labelTheme.AutoSize = true;
+            this.labelTheme.Location = new System.Drawing.Point(3, 128);
+            this.labelTheme.Name = "labelTheme";
+            this.labelTheme.Size = new System.Drawing.Size(40, 13);
+            this.labelTheme.TabIndex = 5;
+            this.labelTheme.Text = "&Theme:";
+            //
+            // comboBoxTheme
+            //
+            this.comboBoxTheme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxTheme.FormattingEnabled = true;
+            this.comboBoxTheme.Items.AddRange(new object[] {
+            "Light",
+            "Dark",
+            "System"});
+            this.comboBoxTheme.Location = new System.Drawing.Point(49, 124);
+            this.comboBoxTheme.Name = "comboBoxTheme";
+            this.comboBoxTheme.Size = new System.Drawing.Size(121, 21);
+            this.comboBoxTheme.TabIndex = 6;
+            //
+            // labelThemeNote
+            //
+            this.labelThemeNote.AutoSize = true;
+            this.labelThemeNote.Location = new System.Drawing.Point(3, 152);
+            this.labelThemeNote.Name = "labelThemeNote";
+            this.labelThemeNote.Size = new System.Drawing.Size(197, 13);
+            this.labelThemeNote.TabIndex = 7;
+            this.labelThemeNote.Text = "A new theme applies after GitForce is restarted.";
+            //
+            // ControlOptions
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.labelThemeNote);
+            this.Controls.Add(this.comboBoxTheme);
+            this.Controls.Add(this.labelTheme);
+            this.Controls.Add(this.checkBoxWarnOnDetachedHead);
+            this.Controls.Add(this.checkBoxWarnIfAdmin);
+            this.Controls.Add(this.checkBoxAutoCloseGitOnSuccess);
+            this.Controls.Add(this.checkBoxTabs);
+            this.Controls.Add(this.checkBoxWarnMultipleInstances);
+            this.Name = "ControlOptions";
+            this.Size = new System.Drawing.Size(300, 300);
+            this.Tag = "Options";
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
+        }
+
+        #endregion
+
+        private System.Windows.Forms.CheckBox checkBoxTabs;
+        private System.Windows.Forms.CheckBox checkBoxWarnMultipleInstances;
+        private System.Windows.Forms.CheckBox checkBoxAutoCloseGitOnSuccess;
+        private System.Windows.Forms.CheckBox checkBoxWarnIfAdmin;
+        private System.Windows.Forms.CheckBox checkBoxWarnOnDetachedHead;
+        private System.Windows.Forms.Label labelTheme;
+        private System.Windows.Forms.ComboBox comboBoxTheme;
+        private System.Windows.Forms.Label labelThemeNote;
+    }
+}
