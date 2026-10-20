@@ -145,6 +145,11 @@ namespace GitForce
         /// </summary>
         public static FormMain MainForm;
 
+        /// <summary>
+        /// Set to start GitForce again after it closes (to apply a new theme)
+        /// </summary>
+        public static bool RestartRequested;
+
         #endregion
 
         #region Global variables
@@ -260,6 +265,13 @@ namespace GitForce
                             DoRefresh();
                             Application.Run(MainForm);
                             Properties.Settings.Default.Save();
+
+                            if (RestartRequested)
+                            {
+                                if (mAcquired)
+                                    mAppMutex.ReleaseMutex();
+                                System.Diagnostics.Process.Start(Application.ExecutablePath);
+                            }
 
                             GC.KeepAlive(mAppMutex);
                             return 0;

@@ -24,6 +24,19 @@ namespace GitForce
         private static readonly PanelBranches PanelBranches = new PanelBranches();
         private static readonly PanelRevlist PanelRevlist = new PanelRevlist(); // Needs to be initialized after PanelBranches
 
+        // Bottom panel: differences of the file selected in the left panel
+        private readonly DiffViewControl DiffView = new DiffViewControl();
+
+        // Right side: the panels above, the log of git commands below
+        private readonly SplitContainer splitRight = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal, Name = "splitRight" };
+
+        /// <summary>
+        /// File shown in the bottom diff panel (relative to the repo root), and a short delay so
+        /// that moving through the tree with the keyboard does not run git on every step
+        /// </summary>
+        private string diffFile;
+        private readonly Timer diffTimer = new Timer { Interval = 150 };
+
         private static readonly Dictionary<string, UserControl> PanelsR = new Dictionary<string, UserControl> {
             { "Commits", PanelCommits },
             { "Revisions", PanelRevlist },
@@ -84,6 +97,25 @@ namespace GitForce
             menuViewCommandLine.Checked = cmdBox.Visible = Properties.Settings.Default.ShowCommandLine;
 
             UpdateRightPaneTabsShowState();
+
+            // Layout: the right side holds the panels tabs above the log of git commands, and the
+            // bottom of the window shows the differences of the file selected in the left panel
+            splitContainer2.Panel2.Controls.Remove(rightTabControl);
+            splitRight.Panel1.Controls.Add(rightTabControl);
+            splitContainer1.Panel2.Controls.Remove(listStatus);
+            splitContainer1.Panel2.Controls.Remove(cmdBox);
+            splitRight.Panel2.Controls.Add(listStatus);
+            splitRight.Panel2.Controls.Add(cmdBox);
+            splitContainer2.Panel2.Controls.Add(splitRight);
+            DiffView.Dock = DockStyle.Fill;
+            DiffView.RefreshCompare = UpdateFileDiff;
+            splitContainer1.Panel2.Controls.Add(DiffView);
+            splitContainer1.FixedPanel = FixedPanel.None;
+            splitContainer2.FixedPanel = FixedPanel.None;
+            Shown += (s, e) => RestoreLayout();
+            diffTimer.Tick += (s, e) => UpdateFileDiff();
+
+            AddThemeMenu();
 
             // Enable SSH only if the PuTTY support class has been instantiated
             if (App.Putty != null)
@@ -199,6 +231,8 @@ namespace GitForce
         {
             // Remove the print status handler
             App.PrintStatusMessage -= PrintStatus;
+
+            SaveLayout();
 
             // Store geometry of _this_ window
             ClassWinGeometry.Save(this);
@@ -400,8 +434,153 @@ namespace GitForce
                 menuView0, menuView1, menuView2, menuView3, menuView4, menuView5 };
             foreach (var m in viewMenus)
                 m.Checked = false;
-            viewMenus[mode].Checked = true;
+            if (mode >= 0 && mode < viewMenus.Count)
+                viewMenus[mode].Checked = true;
         }
+
+        #region Layout, theme and the bottom diff panel
+
+        /// <summary>
+        /// Splitter positions as fractions of the available space. The defaults give the left
+        /// panel the larger part of the width and the top part of the window over the diff panel.
+        /// </summary>
+        private void RestoreLayout()
+        {
+            double top = 0.55, left = 0.62, tabs = 0.62;
+            string[] saved = (Properties.Settings.Default.MainLayout ?? string.Empty).Split(';');
+            if (saved.Length == 3)
+            {
+                double v;
+                if (double.TryParse(saved[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) top = v;
+                if (double.TryParse(saved[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) left = v;
+                if (double.TryParse(saved[2], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) tabs = v;
+            }
+            SetSplit(splitContainer1, top);
+            SetSplit(splitContainer2, left);
+            SetSplit(splitRight, tabs);
+        }
+
+        private static void SetSplit(SplitContainer split, double fraction)
+        {
+            int size = split.Orientation == Orientation.Horizontal ? split.Height : split.Width;
+            int distance = (int)(size * Math.Max(0.1, Math.Min(0.9, fraction)));
+            try
+            {
+                split.SplitterDistance = Math.Max(split.Panel1MinSize, Math.Min(size - split.Panel2MinSize - split.SplitterWidth, distance));
+            }
+            catch (InvalidOperationException) { }
+            catch (ArgumentException) { }
+        }
+
+        private static double GetSplit(SplitContainer split)
+        {
+            int size = split.Orientation == Orientation.Horizontal ? split.Height : split.Width;
+            return size > 0 ? (double)split.SplitterDistance / size : 0.5;
+        }
+
+        private void SaveLayout()
+        {
+            if (WindowState == FormWindowState.Minimized)
+                return;
+            Properties.Settings.Default.MainLayout = string.Join(";", new[] {
+                GetSplit(splitContainer1), GetSplit(splitContainer2), GetSplit(splitRight) }
+                .Select(d => d.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)));
+        }
+
+        /// <summary>
+        /// Add the View > Theme menu: light, dark or the system setting. The new theme applies
+        /// when GitForce starts, so offer to restart it.
+        /// </summary>
+        private void AddThemeMenu()
+        {
+            ToolStripMenuItem mTheme = new ToolStripMenuItem("Theme");
+            List<string> modes = new List<string> { ClassTheme.ModeLight, ClassTheme.ModeDark };
+            if (!ClassUtils.IsMono())
+                modes.Add(ClassTheme.ModeSystem);
+            foreach (string mode in modes)
+            {
+                ToolStripMenuItem m = new ToolStripMenuItem(mode) { Tag = mode };
+                m.Click += (s, e) =>
+                {
+                    string theme = (string)((ToolStripMenuItem)s).Tag;
+                    if (theme == Properties.Settings.Default.Theme)
+                        return;
+                    Properties.Settings.Default.Theme = theme;
+                    if (MessageBox.Show("The " + theme + " theme applies when GitForce starts.\n\nRestart GitForce now?",
+                            "Theme", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                    {
+                        App.RestartRequested = true;
+                        Close();
+                    }
+                };
+                mTheme.DropDownItems.Add(m);
+            }
+            mTheme.DropDownOpening += (s, e) =>
+            {
+                foreach (ToolStripMenuItem m in mTheme.DropDownItems)
+                    m.Checked = (string)m.Tag == (Properties.Settings.Default.Theme ?? ClassTheme.ModeLight);
+            };
+            menuMainView.DropDownItems.Add(new ToolStripSeparator());
+            menuMainView.DropDownItems.Add(mTheme);
+        }
+
+        /// <summary>
+        /// Show a file in the bottom diff panel: its last committed version on the left and the
+        /// current one on the right. A null or folder path empties the panel.
+        /// </summary>
+        public void ShowFileDiff(string relPath)
+        {
+            diffFile = relPath;
+            diffTimer.Stop();
+            diffTimer.Start();
+        }
+
+        private void UpdateFileDiff()
+        {
+            diffTimer.Stop();
+            ClassRepo repo = App.Repos.Current;
+            string rel = diffFile;
+            if (repo == null || string.IsNullOrEmpty(rel))
+            {
+                DiffView.Clear();
+                return;
+            }
+            string full = Path.Combine(repo.Path, rel);
+            if (Directory.Exists(full))
+            {
+                DiffView.Clear();
+                return;
+            }
+            try
+            {
+                // A file inside a submodule belongs to the repository of that submodule
+                string workDir = repo.Path;
+                string gitPath = rel;
+                ClassSubmodules.Submodule sm;
+                string relativePath;
+                if (repo.Submodules != null && repo.Submodules.GetContainingSubmodule(rel, out sm, out relativePath))
+                {
+                    workDir = sm.Path;
+                    gitPath = relativePath;
+                }
+
+                int exitCode;
+                byte[] previous = DiffViewControl.RunGitBytes(workDir, "show \"HEAD:" + gitPath.Replace('\\', '/') + "\"", out exitCode);
+                if (exitCode != 0)
+                    previous = null;
+                byte[] current = File.Exists(full) ? File.ReadAllBytes(full) : null;
+                string description = previous == null ? "(no previous version)"
+                                   : current == null ? "(deleted)"
+                                   : "last commit (HEAD)  \u2194  working copy";
+                DiffView.ShowCompare(rel, description, previous, current);
+            }
+            catch (Exception ex)
+            {
+                DiffView.Clear(ex.Message);
+            }
+        }
+
+        #endregion
 
         /// <summary>
         /// Set the view mode by sending a menu item whose Tag contains the mode number.
@@ -565,6 +744,10 @@ namespace GitForce
         /// </summary>
         private void FormMainRefresh()
         {
+            // The selected file may have changed (commit, revert, edit...): show it again
+            if (diffFile != null)
+                ShowFileDiff(diffFile);
+
             // Change the window title and display the default remote name
             StringBuilder title = new StringBuilder("GitForce ");
 

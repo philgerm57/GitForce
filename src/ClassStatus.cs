@@ -86,6 +86,52 @@ namespace GitForce
         }
 
         /// <summary>
+        /// Files and folders ignored by git (.gitignore and the other exclude files), relative
+        /// to the root. A folder whose whole content is ignored is listed once, by its own path.
+        /// Loaded on first use since only some of the views need it.
+        /// </summary>
+        private HashSet<string> ignored;
+
+        /// <summary>
+        /// Returns the list of ignored files and folders
+        /// </summary>
+        public List<string> GetIgnored()
+        {
+            LoadIgnored();
+            return ignored.ToList();
+        }
+
+        /// <summary>
+        /// Return true if a given file or folder is ignored, directly or by being inside an ignored folder
+        /// </summary>
+        public bool IsIgnored(string path)
+        {
+            LoadIgnored();
+            path = path.TrimEnd(Path.DirectorySeparatorChar);
+            while (path.Length > 0)
+            {
+                if (ignored.Contains(path))
+                    return true;
+                int i = path.LastIndexOf(Path.DirectorySeparatorChar);
+                path = i > 0 ? path.Substring(0, i) : string.Empty;
+            }
+            return false;
+        }
+
+        private void LoadIgnored()
+        {
+            if (ignored != null)
+                return;
+            ignored = new HashSet<string>();
+            ExecResult result = Repo.Run("status --porcelain --ignored -z");
+            if (!result.Success())
+                return;
+            foreach (string s in result.stdout.Split(new[] { '\0' }, StringSplitOptions.RemoveEmptyEntries))
+                if (s.StartsWith("!! "))
+                    ignored.Add(s.Substring(3).Replace('/', Path.DirectorySeparatorChar).TrimEnd(Path.DirectorySeparatorChar));
+        }
+
+        /// <summary>
         /// Return true if the repo contains files that are not yet merged
         /// </summary>
         public bool IsUnmerged()

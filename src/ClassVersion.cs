@@ -20,8 +20,9 @@ namespace GitForce
         /// </summary>
         public static string GetVersion()
         {
-            Assembly asm = Assembly.GetExecutingAssembly();
-            return FileVersionInfo.GetVersionInfo(asm.Location).FileVersion;
+            // Read the attribute rather than the file: in a single-file app the assembly has no file
+            var attr = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyFileVersionAttribute>();
+            return attr != null ? attr.Version : string.Empty;
         }
 
         /// <summary>
@@ -29,8 +30,8 @@ namespace GitForce
         /// </summary>
         public static string GetBuild()
         {
-            Assembly asm = Assembly.GetExecutingAssembly();
-            return FileVersionInfo.GetVersionInfo(asm.Location).ProductName;
+            var attr = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyProductAttribute>();
+            return attr != null ? attr.Product : string.Empty;
         }
 
         /// <summary>

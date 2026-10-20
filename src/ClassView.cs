@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -41,6 +43,11 @@ namespace GitForce
             SubmoduleOpened,
             SubmoduleModified,
             SubmoduleUninitialized,
+
+            // Folders use pairs of images (closed, opened) so that expanding a node can set bit 0
+            FolderIgnored,
+            FolderIgnoredOpened,
+            FileIgnored,
         }
 
         /// <summary>
@@ -97,7 +104,41 @@ namespace GitForce
             foreach (var kvp in Res)
                 il.Images.Add(kvp.Value);
 
+            // Images for ignored folders and files are drawn from the existing ones
+            il.Images.Add(MakeIgnoredImage(Resources.TreeIconFC, true));
+            il.Images.Add(MakeIgnoredImage(Resources.TreeIconFO, true));
+            il.Images.Add(MakeIgnoredImage(Resources.TreeIconU, false));
+
             return il;
+        }
+
+        /// <summary>
+        /// Draws the image of an ignored file or folder: a faded file or folder with a red "no entry" sign
+        /// </summary>
+        private static Bitmap MakeIgnoredImage(Icon icon, bool folder)
+        {
+            Bitmap result = new Bitmap(32, 16);
+            using (Bitmap source = icon.ToBitmap())
+            using (Graphics g = Graphics.FromImage(result))
+            {
+                using (ImageAttributes attr = new ImageAttributes())
+                {
+                    attr.SetColorMatrix(new ColorMatrix { Matrix33 = 0.45f });
+                    // File icons have their status symbol on the left half: keep only the file picture
+                    Rectangle src = folder ? new Rectangle(0, 0, source.Width, source.Height) : new Rectangle(16, 0, 16, 16);
+                    g.DrawImage(source, new Rectangle(folder ? 0 : 16, 0, src.Width, src.Height),
+                        src.X, src.Y, src.Width, src.Height, GraphicsUnit.Pixel, attr);
+                }
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                RectangleF sign = folder ? new RectangleF(0.5f, 4.5f, 10, 10) : new RectangleF(2.5f, 2.5f, 11, 11);
+                using (Pen pen = new Pen(Color.FromArgb(215, 25, 25), 2f))
+                {
+                    g.FillEllipse(Brushes.White, sign);
+                    g.DrawEllipse(pen, sign);
+                    g.DrawLine(pen, sign.Left + 2.5f, sign.Bottom - 2.5f, sign.Right - 2.5f, sign.Top + 2.5f);
+                }
+            }
+            return result;
         }
 
         /// <summary>
@@ -106,7 +147,7 @@ namespace GitForce
         /// git cache, and for current file with relation to the index, isIndex
         /// specifies which code will be used.
         /// </summary>
-        public static void ViewAssignIcon(ClassStatus status, TreeNode rootNode, bool isIndex)
+        public static void ViewAssignIcon(ClassStatus status, TreeNode rootNode, bool isIndex, bool markIgnored = false)
         {
             TreeNodeCollection nodes = rootNode.Nodes;
             foreach (TreeNode tn in nodes)
@@ -130,6 +171,11 @@ namespace GitForce
                         else
                             tn.ImageIndex = tn.IsExpanded ? (int)Img.SubmoduleOpened : (int)Img.SubmoduleClosed;
                     }
+                    else if (markIgnored && !status.IsMarked(name) && status.IsIgnored(pathToCheck))
+                    {
+                        bool isFolder = tn.Nodes.Count > 0 || Directory.Exists(Path.Combine(App.Repos.Current.Path, pathToCheck));
+                        tn.ImageIndex = isFolder ? (int)Img.FolderIgnored : (int)Img.FileIgnored;
+                    }
                     else if (status.IsMarked(name) || tn.Nodes.Count == 0)
                     {
                         // File node - assign status icon
@@ -147,7 +193,7 @@ namespace GitForce
                            : (int)Img.FolderClosed;
                     }
                 }
-                ViewAssignIcon(status, tn, isIndex);
+                ViewAssignIcon(status, tn, isIndex, markIgnored);
             }
         }
 
@@ -164,6 +210,9 @@ namespace GitForce
                     case Img.FileCopied:     tn.ToolTipText = "Copied"; break;
                     case Img.FileUnmerged:   tn.ToolTipText = "Unmerged"; break;
                     case Img.FileUntracked:  tn.ToolTipText = "Untracked"; break;
+                    case Img.FileIgnored:    tn.ToolTipText = "Ignored (.gitignore)"; break;
+                    case Img.FolderIgnored:
+                    case Img.FolderIgnoredOpened: tn.ToolTipText = "Ignored folder (.gitignore)"; break;
 
                     case Img.FolderClosed:
                     case Img.FolderOpened:   /* no tooltip for unmodified folders */ break;

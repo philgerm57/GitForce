@@ -27,6 +27,7 @@ namespace GitForce
 
         private readonly string file;
         private string[] lines = new string[0];
+        private List<ClassSyntax.Token>[] tokens;
 
         private readonly ToolStrip toolStrip = new ToolStrip();
         private readonly ToolStripLabel labelInfo = new ToolStripLabel();
@@ -119,6 +120,12 @@ namespace GitForce
                 if (e.RowIndex < lines.Length)
                     e.Value = e.ColumnIndex == 0 ? (e.RowIndex + 1).ToString() : lines[e.RowIndex];
             };
+            grid.CellPainting += (s, e) =>
+            {
+                // Source code is drawn with its syntax colors
+                if (tokens != null && e.ColumnIndex == 1 && e.RowIndex >= 0 && e.RowIndex < lines.Length)
+                    ClassSyntax.PaintCell(e, lines[e.RowIndex], tokens[e.RowIndex]);
+            };
             grid.Resize += (s, e) => SizeColumns();
 
             imagePanel.Dock = DockStyle.Fill;
@@ -209,6 +216,9 @@ namespace GitForce
                     lines[i] = ExpandTabs(lines[i].TrimEnd('\r'));
                 if (lines.Length > 1 && lines[lines.Length - 1].Length == 0)
                     Array.Resize(ref lines, lines.Length - 1);    // Trailing newline
+
+                ClassSyntax syntax = ClassSyntax.ForFile(file);
+                tokens = syntax != null ? syntax.TokenizeAll(lines) : null;
 
                 SetMode(grid);
                 grid.RowCount = 0;
@@ -332,7 +342,7 @@ namespace GitForce
         /// A file is considered binary if its beginning contains a NUL character
         /// (UTF-16 text is recognized by its byte order mark first)
         /// </summary>
-        private static bool IsBinary(byte[] data)
+        public static bool IsBinary(byte[] data)
         {
             if (data.Length >= 2 && ((data[0] == 0xFF && data[1] == 0xFE) || (data[0] == 0xFE && data[1] == 0xFF)))
                 return false;
@@ -346,6 +356,15 @@ namespace GitForce
         /// <summary>
         /// Decode text: honor a byte order mark, otherwise use UTF-8 if it is valid and Latin-1 if not
         /// </summary>
+        /// <summary>
+        /// Decode text the same way as the viewer does
+        /// </summary>
+        public static string DecodeText(byte[] data)
+        {
+            string name;
+            return Decode(data, out name);
+        }
+
         private static string Decode(byte[] data, out string name)
         {
             using (StreamReader reader = new StreamReader(new MemoryStream(data), new UTF8Encoding(false, true), true))

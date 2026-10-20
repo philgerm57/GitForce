@@ -275,6 +275,252 @@ namespace GitForce
         }
 
         /// <summary>
+        /// Add files and folders to the .gitignore file at the root of the repository.
+        /// Files are added by their path; folders as "folder/*" so that all of their files and
+        /// subfolders are ignored. Patterns are anchored to the root with a leading '/'.
+        /// Returns the list of patterns that were added (patterns already present are skipped).
+        /// </summary>
+        public List<string> GitIgnore(List<string> paths)
+        {
+            string ignoreFile = System.IO.Path.Combine(Root, ".gitignore");
+            List<string> existing = File.Exists(ignoreFile)
+                ? File.ReadAllLines(ignoreFile).Select(s => s.Trim()).ToList()
+                : new List<string>();
+
+            List<string> added = new List<string>();
+            foreach (string p in paths)
+            {
+                string rel = p.Replace('\\', '/').Trim('/');
+                if (rel.Length == 0 || rel == ".")
+                    continue;   // Ignoring the whole repository makes no sense
+                string pattern = "/" + EscapeIgnorePattern(rel);
+                if (Directory.Exists(System.IO.Path.Combine(Root, p)))
+                    pattern += "/*";
+                if (!existing.Contains(pattern) && !added.Contains(pattern))
+                    added.Add(pattern);
+            }
+            if (added.Count == 0)
+                return added;
+
+            AppendToGitignore(added);
+            App.PrintStatusMessage("Added to .gitignore: " + string.Join(" ", added), MessageType.General);
+            return added;
+        }
+
+        /// <summary>
+        /// Append lines to the .gitignore file at the root of the repository
+        /// </summary>
+        private void AppendToGitignore(List<string> lines)
+        {
+            string ignoreFile = System.IO.Path.Combine(Root, ".gitignore");
+            // Start on a new line if the file does not end with one
+            StringBuilder text = new StringBuilder();
+            if (File.Exists(ignoreFile))
+            {
+                string content = File.ReadAllText(ignoreFile);
+                if (content.Length > 0 && !content.EndsWith("\n"))
+                    text.Append(Environment.NewLine);
+            }
+            foreach (string line in lines)
+                text.Append(line).Append(Environment.NewLine);
+            File.AppendAllText(ignoreFile, text.ToString());
+        }
+
+        /// <summary>
+        /// Stop ignoring files and folders, so they show up again as untracked.
+        /// The ignore rule is removed when it is written for that path only, in a .gitignore or
+        /// exclude file of this repository; a broader rule ("*.log", "bin/") or a rule from
+        /// outside the repository is overridden by adding a "!path" rule to the root .gitignore.
+        /// Returns the paths that are still ignored (git can not re-include a file whose parent
+        /// folder is ignored).
+        /// </summary>
+        public List<string> GitUnignore(List<string> paths)
+        {
+            List<string> still = new List<string>();
+            foreach (string p in paths)
+            {
+                string rel = p.Replace('\\', '/').Trim('/');
+                bool isDir = Directory.Exists(System.IO.Path.Combine(Root, p));
+                string negation = null;
+                for (int attempt = 0; ; attempt++)
+                {
+                    string source, pattern;
+                    int line;
+                    if (!GetIgnoreRule(rel, isDir, out source, out line, out pattern))
+                        break;          // No longer ignored
+                    if (attempt >= 10 || negation != null)
+                    {
+                        // A "!path" rule has no effect inside an ignored folder: do not leave it behind
+                        if (negation != null)
+                            RemoveLastLine(System.IO.Path.Combine(Root, ".gitignore"), negation);
+                        still.Add(p);
+                        break;
+                    }
+
+                    string file = System.IO.Path.GetFullPath(System.IO.Path.Combine(Root, source));
+                    string target = PathRelativeToIgnoreFile(file, rel);
+                    if (target != null && IsRuleForPath(pattern, target))
+                    {
+                        RemoveLine(file, line);
+                        App.PrintStatusMessage(string.Format("Removed \"{0}\" from {1}", pattern, source), MessageType.General);
+                    }
+                    else
+                    {
+                        negation = "!/" + EscapeIgnorePattern(rel) + (isDir ? "/" : "");
+                        AppendToGitignore(new List<string> { negation });
+                        App.PrintStatusMessage(string.Format("Added \"{0}\" to .gitignore (overrides \"{1}\" in {2})", negation, pattern, source), MessageType.General);
+                    }
+                }
+            }
+            return still;
+        }
+
+        /// <summary>
+        /// Find the rule that makes git ignore a path. For a folder whose content is ignored by
+        /// a rule like "folder/*" (the folder itself does not match), look at its content.
+        /// Returns false if the path is not ignored.
+        /// </summary>
+        private bool GetIgnoreRule(string rel, bool isDir, out string source, out int line, out string pattern)
+        {
+            source = pattern = string.Empty;
+            line = 0;
+            List<string> probes = new List<string> { rel };
+            if (isDir)
+                probes.Add(rel + "/.gitforce-probe");
+            foreach (string probe in probes)
+            {
+                ExecResult result = Run("check-ignore -v --no-index -- \"" + probe + "\"");
+                if (!result.Success())
+                    continue;
+                // Output format: <source>:<line number>:<pattern><TAB><path>
+                string first = result.stdout.Split('\n')[0];
+                int tab = first.IndexOf('\t');
+                System.Text.RegularExpressions.Match m = System.Text.RegularExpressions.Regex.Match(
+                    tab >= 0 ? first.Substring(0, tab) : first, @"^(.*):(\d+):(.*)$");
+                if (!m.Success)
+                    continue;
+                if (m.Groups[3].Value.StartsWith("!"))
+                    return false;   // The last matching rule is a negation: not ignored
+                source = m.Groups[1].Value;
+                line = int.Parse(m.Groups[2].Value);
+                pattern = m.Groups[3].Value;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Returns the path relative to the folder of the ignore file that would contain its rule,
+        /// or null if that file is not one of this repository's .gitignore or exclude files
+        /// </summary>
+        private string PathRelativeToIgnoreFile(string file, string rel)
+        {
+            string root = System.IO.Path.GetFullPath(Root).TrimEnd(System.IO.Path.DirectorySeparatorChar) + System.IO.Path.DirectorySeparatorChar;
+            if (!file.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+                return null;
+            string fileRel = file.Substring(root.Length).Replace('\\', '/');
+            if (fileRel == ".git/info/exclude")
+                return rel;
+            if (System.IO.Path.GetFileName(file) != ".gitignore")
+                return null;
+            string dir = fileRel.Length > ".gitignore".Length ? fileRel.Substring(0, fileRel.Length - ".gitignore".Length - 1) : string.Empty;
+            if (dir.Length == 0)
+                return rel;
+            return rel.StartsWith(dir + "/", StringComparison.OrdinalIgnoreCase) ? rel.Substring(dir.Length + 1) : null;
+        }
+
+        /// <summary>
+        /// Returns true if an ignore pattern names exactly this path (relative to its ignore file),
+        /// as the rules GitIgnore() writes do: "/path", "/path/", "/path/*", "dir/file".
+        /// A pattern without a slash ("bin", "*.log") matches at any level, so it is not.
+        /// </summary>
+        private static bool IsRuleForPath(string pattern, string target)
+        {
+            string p = pattern.Trim();
+            foreach (string suffix in new[] { "/**", "/*", "/" })
+                if (p.EndsWith(suffix) && !p.EndsWith("\\" + suffix))
+                {
+                    p = p.Substring(0, p.Length - suffix.Length);
+                    break;
+                }
+            bool anchored = p.StartsWith("/") || p.Contains("/");
+            p = p.TrimStart('/');
+            StringBuilder unescaped = new StringBuilder();
+            for (int i = 0; i < p.Length; i++)
+            {
+                if (p[i] == '\\' && i + 1 < p.Length)
+                    i++;
+                unescaped.Append(p[i]);
+            }
+            return anchored && string.Equals(unescaped.ToString(), target, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Remove the last line of a text file that has the given content
+        /// </summary>
+        private static void RemoveLastLine(string file, string content)
+        {
+            List<string> lines = File.ReadAllText(file).Replace("\r\n", "\n").Split('\n').ToList();
+            int index = lines.FindLastIndex(s => s.Trim() == content);
+            if (index >= 0)
+                RemoveLine(file, index + 1);
+        }
+
+        /// <summary>
+        /// Remove a line (1-based) from a text file, keeping its line endings
+        /// </summary>
+        private static void RemoveLine(string file, int line)
+        {
+            string text = File.ReadAllText(file);
+            string nl = text.Contains("\r\n") ? "\r\n" : "\n";
+            List<string> lines = text.Replace("\r\n", "\n").Split('\n').ToList();
+            if (line >= 1 && line <= lines.Count)
+                lines.RemoveAt(line - 1);
+            File.WriteAllText(file, string.Join(nl, lines));
+        }
+
+        /// <summary>
+        /// Escape the characters that have a special meaning in a .gitignore pattern
+        /// so that a path matches only itself
+        /// </summary>
+        private static string EscapeIgnorePattern(string path)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (char c in path)
+            {
+                if (c == '*' || c == '?' || c == '[' || c == '\\')
+                    sb.Append('\\');
+                sb.Append(c);
+            }
+            string s = sb.ToString();
+            if (s.StartsWith("#") || s.StartsWith("!"))
+                s = "\\" + s;
+            if (s.EndsWith(" "))
+                s = s.Substring(0, s.Length - 1) + "\\ ";
+            return s;
+        }
+
+        /// <summary>
+        /// Returns the files under the given paths that are tracked by git
+        /// </summary>
+        public List<string> GetTrackedFiles(List<string> paths)
+        {
+            ExecResult result = Run("ls-files -- " + QuoteAndFlattenPaths(paths));
+            if (!result.Success())
+                return new List<string>();
+            return result.stdout.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+        }
+
+        /// <summary>
+        /// Stop tracking files and folders without deleting them from the working directory
+        /// </summary>
+        public void GitUntrack(List<string> paths)
+        {
+            App.PrintStatusMessage("Untracking " + QuoteAndFlattenPaths(paths), MessageType.General);
+            RunCmdWithSubmoduleSupport("rm --cached -r -q --", paths);
+        }
+
+        /// <summary>
         /// Delete a list of files
         /// </summary>
         public void GitDelete(List<string> files) { GitDelete("", files); }
