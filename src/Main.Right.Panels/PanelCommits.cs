@@ -375,7 +375,7 @@ namespace GitForce.Main.Right.Panels
             ToolStripMenuItem mUnstage = new ToolStripMenuItem("Unstage", null, MenuUnstageClick) { Tag = tag };
 
             // Build the "Resolve" submenu
-            ToolStripMenuItem mResolveTool = new ToolStripMenuItem("Run Merge Tool...", null, MenuMergeTool) { Tag = tag };
+            ToolStripMenuItem mResolveTool = new ToolStripMenuItem(ClassMerge.IsBuiltIn() ? "Resolve Conflicts..." : "Run Merge Tool...", null, MenuMergeTool) { Tag = tag };
             ToolStripMenuItem mAcceptOurs = new ToolStripMenuItem("Accept ours", null, MenuAcceptClick) { Tag = "--ours" };
             ToolStripMenuItem mAcceptTheirs = new ToolStripMenuItem("Accept theirs", null, MenuAcceptClick) { Tag = "--theirs" };
             ToolStripMenuItem mAbort = new ToolStripMenuItem("Abort Merge", null, MenuAbortMergeClick);
@@ -722,9 +722,8 @@ namespace GitForce.Main.Right.Panels
         private void MenuMergeTool(object sender, EventArgs e)
         {
             string file = (sender as ToolStripMenuItem).Tag as string ?? "";
-            string cmd = "mergetool " + ClassMerge.GetMergeCmd() + " \"" + file + "\"";
-            status.Repo.RunCmd(cmd);
-            App.DoRefresh();
+            List<string> files = file.Length > 0 ? new List<string> { file } : GetSelectedFiles();
+            ClassMerge.ResolveConflicts(status.Repo, files);
         }
 
         /// <summary>
@@ -818,6 +817,11 @@ namespace GitForce.Main.Right.Panels
             _lastSelectedNode = treeCommits.SelectedNode;
             if ((MouseButtons & MouseButtons.Left) == MouseButtons.Left) _duringSelect = true;
             App.MainForm.BuildChangelistMenu();
+
+            // Show the selected file in the diff panel: what will be committed against the last commit
+            TreeNode node = treeCommits.SelectedNodes.Count == 1 ? treeCommits.SelectedNodes[0] : null;
+            if (node != null && node.Tag is string && status != null && status.IsMarked((string)node.Tag))
+                App.MainForm.ShowStagedFileDiff((string)node.Tag);
         }
 
         private void TreeCommitsPreviewKeyDown(object sender, PreviewKeyDownEventArgs e)

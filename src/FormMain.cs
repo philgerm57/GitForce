@@ -23,6 +23,7 @@ namespace GitForce
         private static readonly PanelCommits PanelCommits = new PanelCommits();
         private static readonly PanelBranches PanelBranches = new PanelBranches();
         private static readonly PanelRevlist PanelRevlist = new PanelRevlist(); // Needs to be initialized after PanelBranches
+        private static readonly PanelGraph PanelGraph = new PanelGraph();
 
         // Bottom panel: differences of the file selected in the left panel
         private readonly DiffViewControl DiffView = new DiffViewControl();
@@ -37,9 +38,24 @@ namespace GitForce
         private string diffFile;
         private readonly Timer diffTimer = new Timer { Interval = 150 };
 
+        /// <summary>
+        /// What the diff panel shows: a working file or a file of a commit. Called (again) by
+        /// the timer and by the Refresh button of the panel.
+        /// </summary>
+        private Action diffLoader;
+
+        // Files of the commit selected in the Revisions or Graph tab, shown at the right of the log
+        private readonly SplitContainer splitLog = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical, Name = "splitLog" };
+        private readonly ListView listCommitFiles = new ListView();
+        private readonly Label labelCommit = new Label();
+        private readonly Timer commitTimer = new Timer { Interval = 120 };
+        private string commitPending;
+        private string commitSha, commitParent;
+
         private static readonly Dictionary<string, UserControl> PanelsR = new Dictionary<string, UserControl> {
             { "Commits", PanelCommits },
             { "Revisions", PanelRevlist },
+            { "Graph", PanelGraph },
             { "Branches", PanelBranches },
             { "Repos", PanelRepos }
         };
@@ -47,6 +63,7 @@ namespace GitForce
         private static readonly Dictionary<string, string> PanelsRShortcuts = new Dictionary<string, string> {
             { "Commits", "F6" },
             { "Revisions", "F7" },
+            { "Graph", "F9" },
             { "Branches", "F8"},
             { "Repos", "F10" }
         };
@@ -104,18 +121,34 @@ namespace GitForce
             splitRight.Panel1.Controls.Add(rightTabControl);
             splitContainer1.Panel2.Controls.Remove(listStatus);
             splitContainer1.Panel2.Controls.Remove(cmdBox);
-            splitRight.Panel2.Controls.Add(listStatus);
-            splitRight.Panel2.Controls.Add(cmdBox);
+            splitLog.Panel1.Controls.Add(listStatus);
+            splitLog.Panel1.Controls.Add(cmdBox);
+            splitRight.Panel2.Controls.Add(splitLog);
+            InitCommitFiles();
             splitContainer2.Panel2.Controls.Add(splitRight);
             DiffView.Dock = DockStyle.Fill;
-            DiffView.RefreshCompare = UpdateFileDiff;
+            DiffView.RefreshCompare = () => { if (diffLoader != null) diffLoader(); };
             splitContainer1.Panel2.Controls.Add(DiffView);
             splitContainer1.FixedPanel = FixedPanel.None;
             splitContainer2.FixedPanel = FixedPanel.None;
             Shown += (s, e) => RestoreLayout();
-            diffTimer.Tick += (s, e) => UpdateFileDiff();
+            diffTimer.Tick += (s, e) =>
+            {
+                diffTimer.Stop();
+                if (diffLoader != null)
+                    diffLoader();
+            };
+            commitTimer.Tick += (s, e) => LoadCommitFiles();
 
             AddThemeMenu();
+
+            // View > Graph: the commit graph of all branches, next to the Revisions tab
+            menuMainView.DropDownItems.Insert(menuMainView.DropDownItems.IndexOf(menuMainSubmittedChanges) + 1,
+                new ToolStripMenuItem("Commit Graph", null, RightPanelSelectionEvent, Keys.F9) { Tag = "Graph" });
+
+            // Help > French getting started guide (a PDF embedded in the program)
+            menuMainHelp.DropDownItems.Insert(menuMainHelp.DropDownItems.IndexOf(gettingStartedMenuItem) + 1,
+                new ToolStripMenuItem("Guide de démarrage (français)", null, (s, e) => ClassHelp.OpenFrenchGuide()));
 
             // Enable SSH only if the PuTTY support class has been instantiated
             if (App.Putty != null)
@@ -446,18 +479,20 @@ namespace GitForce
         /// </summary>
         private void RestoreLayout()
         {
-            double top = 0.55, left = 0.62, tabs = 0.62;
+            double top = 0.55, left = 0.62, tabs = 0.62, log = 0.5;
             string[] saved = (Properties.Settings.Default.MainLayout ?? string.Empty).Split(';');
-            if (saved.Length == 3)
+            if (saved.Length >= 3)
             {
                 double v;
                 if (double.TryParse(saved[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) top = v;
                 if (double.TryParse(saved[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) left = v;
                 if (double.TryParse(saved[2], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) tabs = v;
+                if (saved.Length >= 4 && double.TryParse(saved[3], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) log = v;
             }
             SetSplit(splitContainer1, top);
             SetSplit(splitContainer2, left);
             SetSplit(splitRight, tabs);
+            SetSplit(splitLog, log);
         }
 
         private static void SetSplit(SplitContainer split, double fraction)
@@ -483,7 +518,7 @@ namespace GitForce
             if (WindowState == FormWindowState.Minimized)
                 return;
             Properties.Settings.Default.MainLayout = string.Join(";", new[] {
-                GetSplit(splitContainer1), GetSplit(splitContainer2), GetSplit(splitRight) }
+                GetSplit(splitContainer1), GetSplit(splitContainer2), GetSplit(splitRight), GetSplit(splitLog) }
                 .Select(d => d.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)));
         }
 
@@ -531,9 +566,211 @@ namespace GitForce
         public void ShowFileDiff(string relPath)
         {
             diffFile = relPath;
+            diffLoader = UpdateFileDiff;
             diffTimer.Stop();
             diffTimer.Start();
         }
+
+        /// <summary>
+        /// Show a staged file (Pending Changelists) in the diff panel: the version of the last
+        /// commit on the left, the staged version that will be committed on the right
+        /// </summary>
+        public void ShowStagedFileDiff(string relPath)
+        {
+            diffFile = null;
+            diffLoader = () =>
+            {
+                ClassRepo repo = App.Repos.Current;
+                if (repo == null)
+                {
+                    DiffView.Clear();
+                    return;
+                }
+                try
+                {
+                    string path = relPath.Replace('\\', '/');
+                    // A renamed file is compared with its old name in the last commit
+                    string old = repo.Status != null ? repo.Status.GetAltFile(relPath) : string.Empty;
+                    string oldPath = string.IsNullOrEmpty(old) ? path : old.Replace('\\', '/');
+                    int exitCode;
+                    byte[] previous = DiffViewControl.RunGitBytes(repo.Path, "show \"HEAD:" + oldPath + "\"", out exitCode);
+                    if (exitCode != 0)
+                        previous = null;
+                    byte[] staged = DiffViewControl.RunGitBytes(repo.Path, "show \":" + path + "\"", out exitCode);
+                    if (exitCode != 0)
+                        staged = null;
+                    string description = previous == null ? "(new file)  \u2192  staged"
+                                       : staged == null ? "last commit  \u2192  (deleted)"
+                                       : "last commit (HEAD)  \u2194  staged (index)";
+                    DiffView.ShowCompare(relPath, description, previous, staged);
+                }
+                catch (Exception ex)
+                {
+                    DiffView.Clear(ex.Message);
+                }
+            };
+            diffTimer.Stop();
+            diffTimer.Start();
+        }
+
+        #region Files of a commit
+
+        private void InitCommitFiles()
+        {
+            labelCommit.Dock = DockStyle.Top;
+            labelCommit.Height = 20;
+            labelCommit.AutoEllipsis = true;
+            labelCommit.TextAlign = ContentAlignment.MiddleLeft;
+            labelCommit.Padding = new Padding(3, 0, 0, 0);
+            labelCommit.Text = "Click a commit in Revisions or Graph to list its files";
+
+            listCommitFiles.Dock = DockStyle.Fill;
+            listCommitFiles.View = View.Details;
+            listCommitFiles.FullRowSelect = true;
+            listCommitFiles.HideSelection = false;
+            listCommitFiles.MultiSelect = false;
+            listCommitFiles.HeaderStyle = ColumnHeaderStyle.Nonclickable;
+            listCommitFiles.Columns.Add("", 26);
+            listCommitFiles.Columns.Add("File", 400);
+            listCommitFiles.SizeChanged += (s, e) =>
+                listCommitFiles.Columns[1].Width = Math.Max(100, listCommitFiles.ClientSize.Width - listCommitFiles.Columns[0].Width - 4);
+            listCommitFiles.SelectedIndexChanged += (s, e) =>
+            {
+                if (listCommitFiles.SelectedItems.Count == 1)
+                    ShowCommitFileDiff((string[])listCommitFiles.SelectedItems[0].Tag);
+            };
+            listCommitFiles.ShowItemToolTips = true;
+
+            splitLog.Panel2.Controls.Add(listCommitFiles);
+            splitLog.Panel2.Controls.Add(labelCommit);
+        }
+
+        /// <summary>
+        /// List the files changed by a commit (against its first parent) at the right of the log.
+        /// Called when a commit is clicked in the Revisions or the Graph tab.
+        /// </summary>
+        public void ShowCommitFiles(string sha)
+        {
+            commitPending = sha;
+            commitTimer.Stop();
+            commitTimer.Start();
+        }
+
+        private void LoadCommitFiles()
+        {
+            commitTimer.Stop();
+            ClassRepo repo = App.Repos.Current;
+            listCommitFiles.BeginUpdate();
+            listCommitFiles.Items.Clear();
+            try
+            {
+                if (repo == null || string.IsNullOrEmpty(commitPending))
+                    return;
+                string dir = repo.Path;
+                commitSha = DiffViewControl.RunGitRaw(dir, "rev-parse --verify -q \"" + commitPending + "^{commit}\"").Trim();
+                commitParent = DiffViewControl.RunGitRaw(dir, "rev-parse --verify -q \"" + commitPending + "^1\"").Trim();
+                if (commitSha.Length == 0)
+                {
+                    labelCommit.Text = "Unknown commit " + commitPending;
+                    return;
+                }
+                string subject = DiffViewControl.RunGitRaw(dir, "log -1 --format=%s " + commitSha).Trim();
+                string args = commitParent.Length > 0
+                    ? "diff-tree -r -M -z --name-status " + commitParent + " " + commitSha
+                    : "diff-tree --root --no-commit-id -r -M -z --name-status " + commitSha;
+                string[] tokens = DiffViewControl.RunGitRaw(dir, args).Split(new[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
+
+                bool dark = ClassTheme.IsDark;
+                for (int i = 0; i < tokens.Length; )
+                {
+                    string code = tokens[i].Trim();
+                    if (code.Length == 0) { i++; continue; }
+                    char kind = code[0];
+                    string oldPath, path;
+                    if ((kind == 'R' || kind == 'C') && i + 2 < tokens.Length)
+                    {
+                        oldPath = tokens[i + 1];
+                        path = tokens[i + 2];
+                        i += 3;
+                    }
+                    else if (i + 1 < tokens.Length)
+                    {
+                        oldPath = path = tokens[i + 1];
+                        i += 2;
+                    }
+                    else
+                        break;
+                    ListViewItem item = new ListViewItem(kind.ToString());
+                    item.SubItems.Add(oldPath != path ? oldPath + "  \u2192  " + path : path);
+                    item.Tag = new[] { kind.ToString(), oldPath, path };
+                    item.ToolTipText = kind == 'A' ? "Added" : kind == 'D' ? "Deleted" : kind == 'R' ? "Renamed" : kind == 'C' ? "Copied" : "Modified";
+                    item.UseItemStyleForSubItems = true;
+                    if (kind == 'A') item.ForeColor = dark ? Color.FromArgb(110, 200, 120) : Color.FromArgb(0, 128, 0);
+                    else if (kind == 'D') item.ForeColor = dark ? Color.FromArgb(240, 110, 110) : Color.FromArgb(190, 0, 0);
+                    else if (kind == 'R' || kind == 'C') item.ForeColor = dark ? Color.FromArgb(110, 160, 240) : Color.FromArgb(0, 80, 190);
+                    listCommitFiles.Items.Add(item);
+                }
+                labelCommit.Text = commitSha.Substring(0, 7) + "  " + subject + "   (" + listCommitFiles.Items.Count + " file(s))";
+            }
+            catch (Exception ex)
+            {
+                labelCommit.Text = ex.Message;
+            }
+            finally
+            {
+                listCommitFiles.EndUpdate();
+            }
+        }
+
+        /// <summary>
+        /// Show a file of the listed commit in the diff panel: the version of the previous commit
+        /// on the left (empty when the file did not exist there) and the version of the commit on the right
+        /// </summary>
+        private void ShowCommitFileDiff(string[] file)
+        {
+            string sha = commitSha, parent = commitParent;
+            diffFile = null;
+            diffLoader = () =>
+            {
+                ClassRepo repo = App.Repos.Current;
+                if (repo == null || string.IsNullOrEmpty(sha))
+                {
+                    DiffView.Clear();
+                    return;
+                }
+                try
+                {
+                    char kind = file[0][0];
+                    string oldPath = file[1], path = file[2];
+                    int exitCode;
+                    byte[] previous = null, current = null;
+                    if (kind != 'A' && parent.Length > 0)
+                    {
+                        previous = DiffViewControl.RunGitBytes(repo.Path, "show \"" + parent + ":" + oldPath + "\"", out exitCode);
+                        if (exitCode != 0)
+                            previous = null;
+                    }
+                    if (kind != 'D')
+                    {
+                        current = DiffViewControl.RunGitBytes(repo.Path, "show \"" + sha + ":" + path + "\"", out exitCode);
+                        if (exitCode != 0)
+                            current = null;
+                    }
+                    string description = previous == null ? "(no previous version)  \u2192  " + sha.Substring(0, 7)
+                                       : current == null ? parent.Substring(0, 7) + "  \u2192  (deleted)"
+                                       : parent.Substring(0, 7) + "  \u2194  " + sha.Substring(0, 7);
+                    DiffView.ShowCompare(path.Replace('/', Path.DirectorySeparatorChar), description, previous, current);
+                }
+                catch (Exception ex)
+                {
+                    DiffView.Clear(ex.Message);
+                }
+            };
+            diffTimer.Stop();
+            diffTimer.Start();
+        }
+
+        #endregion
 
         private void UpdateFileDiff()
         {
@@ -1134,8 +1371,7 @@ namespace GitForce
         /// </summary>
         private void MenuMainStashClick(object sender, EventArgs e)
         {
-            FormStash formStash = new FormStash();
-            if (formStash.ShowDialog() == DialogResult.OK)
+            if (FormStashSave.Stash(App.Repos.Current, null))
                 App.DoRefresh();
         }
 
@@ -1144,9 +1380,7 @@ namespace GitForce
         /// </summary>
         private void MenuMainUnstashClick(object sender, EventArgs e)
         {
-            FormUnstash formUnstash = new FormUnstash();
-            if (formUnstash.ShowDialog() == DialogResult.OK)
-                App.DoRefresh();
+            FormStashList.ShowStashes(App.Repos.Current);
         }
 
         #region Custom Tools menu handlers

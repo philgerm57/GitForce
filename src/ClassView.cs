@@ -147,7 +147,7 @@ namespace GitForce
         /// git cache, and for current file with relation to the index, isIndex
         /// specifies which code will be used.
         /// </summary>
-        public static void ViewAssignIcon(ClassStatus status, TreeNode rootNode, bool isIndex, bool markIgnored = false)
+        public static void ViewAssignIcon(ClassStatus status, TreeNode rootNode, bool isIndex, bool markIgnored = false, bool combined = false)
         {
             TreeNodeCollection nodes = rootNode.Nodes;
             foreach (TreeNode tn in nodes)
@@ -180,6 +180,15 @@ namespace GitForce
                     {
                         // File node - assign status icon
                         char icon = isIndex ? status.Xcode(name) : status.Ycode(name);
+                        if (combined && !isIndex && icon == ' ')
+                            icon = status.Xcode(name);
+                        if (combined && status.IsMarked(name))
+                        {
+                            char x = status.Xcode(name), y = status.Ycode(name);
+                            tn.ToolTipText = x == '?' ? "Untracked (new file)"
+                                           : (x != ' ' && y != ' ') ? "Staged, then modified again"
+                                           : x != ' ' ? "Staged (in Pending Changelists)" : "Modified, not staged";
+                        }
                         if (Staticons.ContainsKey(icon))
                             tn.ImageIndex = (int)Staticons[icon];
                         else
@@ -193,7 +202,7 @@ namespace GitForce
                            : (int)Img.FolderClosed;
                     }
                 }
-                ViewAssignIcon(status, tn, isIndex, markIgnored);
+                ViewAssignIcon(status, tn, isIndex, markIgnored, combined);
             }
         }
 

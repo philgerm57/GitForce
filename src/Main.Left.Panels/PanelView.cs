@@ -15,6 +15,14 @@ namespace GitForce.Main.Left.Panels
         private ClassStatus status;
 
         /// <summary>
+        /// View showing only the ignored files and folders, and the option to show ignored
+        /// files in the other views (marked with their own icon) or to hide them
+        /// </summary>
+        private readonly ToolStripMenuItem menuView6 = new ToolStripMenuItem("Ignored Files") { Tag = "6" };
+        private readonly ToolStripMenuItem menuView7 = new ToolStripMenuItem("Changed Files (flat list)") { Tag = "7" };
+        private readonly ToolStripMenuItem menuShowIgnored = new ToolStripMenuItem("Show Ignored Files") { CheckOnClick = true };
+
+        /// <summary>
         /// PanelView constructor
         /// </summary>
         public PanelView()
@@ -22,6 +30,20 @@ namespace GitForce.Main.Left.Panels
             InitializeComponent();
 
             treeView.ImageList = ClassView.GetImageList();
+
+            menuView6.Click += ViewSetByMenuItem;
+            dropViewMode.DropDownItems.Insert(6, menuView6);
+            menuView7.Click += ViewSetByMenuItem;
+            menuView7.ToolTipText = "All the changed files, staged or not, and the new files, in one list with their full path";
+            dropViewMode.DropDownItems.Insert(7, menuView7);
+            menuShowIgnored.Checked = Properties.Settings.Default.ShowIgnoredFiles;
+            menuShowIgnored.ToolTipText = "Show the files and folders ignored by .gitignore, marked with a red sign";
+            menuShowIgnored.Click += (s, e) =>
+            {
+                Properties.Settings.Default.ShowIgnoredFiles = menuShowIgnored.Checked;
+                ViewRefresh();
+            };
+            dropViewMode.DropDownItems.Add(menuShowIgnored);
 
             App.Refresh += ViewRefresh;
 
@@ -51,7 +73,9 @@ namespace GitForce.Main.Left.Panels
         {
             // Set the menu bullet to the current view
             List<ToolStripMenuItem> viewMenus = new List<ToolStripMenuItem> {
-                menuView0, menuView1, menuView2, menuView3, menuView4, menuView5 };
+                menuView0, menuView1, menuView2, menuView3, menuView4, menuView5, menuView6, menuView7 };
+            if (mode < 0 || mode >= viewMenus.Count)
+                mode = 0;
             foreach (var m in viewMenus)
                 m.Checked = false;
             viewMenus[mode].Checked = true;
@@ -86,6 +110,8 @@ namespace GitForce.Main.Left.Panels
                 {
                     case 0:     // Git status of all files: status + untracked
                         files = status.GetFiles();
+                        if (Properties.Settings.Default.ShowIgnoredFiles)
+                            files.AddRange(status.GetIgnored());
                         // Show uninitialized submodules so the user can discover and initialize them
                         if (App.Repos.Current.Submodules != null)
                             foreach (string smPath in App.Repos.Current.Submodules.GetPaths())
@@ -161,6 +187,8 @@ namespace GitForce.Main.Left.Panels
                         // Remove the repo root from the file paths
                         int rootlen = App.Repos.Current.Path.Length;
                         files = files.Select(file => file.Substring(rootlen + 1)).ToList();
+                        if (!Properties.Settings.Default.ShowIgnoredFiles)
+                            files = files.Where(file => !status.IsIgnored(file)).ToList();
                         break;
 
                     case 4:     // Local files not in repo: untracked only
@@ -168,6 +196,16 @@ namespace GitForce.Main.Left.Panels
 
                         // Leave only untracked files
                         files = files.Where(s => status.Xcode(s) == '?').ToList();
+                        if (Properties.Settings.Default.ShowIgnoredFiles)
+                            files.AddRange(status.GetIgnored());
+                        break;
+
+                    case 6:     // Files and folders ignored by .gitignore
+                        files = status.GetIgnored();
+                        break;
+
+                    case 7:     // All the changed files, staged or not, and the new files, as a flat list
+                        files = status.GetFiles();
                         break;
 
                     case 5:     // Git view local files not in .gitignore
@@ -223,7 +261,7 @@ namespace GitForce.Main.Left.Panels
                 // Build the tree view (or a list view)
                 TreeNode node = new TreeNode(App.Repos.Current.Path) { Tag = String.Empty };
 
-                if (status.Repo.IsTreeView)
+                if (status.Repo.IsTreeView && mode != 7)
                     ClassView.BuildTree(node, files, status.Repo.SortBy);
                 else
                     ClassView.BuildFileList(node, files, status.Repo.SortBy);
@@ -232,8 +270,11 @@ namespace GitForce.Main.Left.Panels
                 treeView.Nodes.Add(node);
 
                 // Assign the icons to the nodes of tree view
-                ClassView.ViewAssignIcon(status, node, false);
+                // In the changed files view, a file that is only staged shows its staged state
+                ClassView.ViewAssignIcon(status, node, false, MarkIgnored(), mode == 7);
                 ClassView.ViewUpdateToolTips(node);
+                if (mode == 7)
+                    ClassView.ViewAssignIcon(status, node, false, MarkIgnored(), true);  // Its tooltips tell staged from not staged
 
                 // Set the first node (root) image according to the view mode
                 node.ImageIndex = mode == 2
@@ -248,6 +289,14 @@ namespace GitForce.Main.Left.Panels
             }
             treeView.ShowNodeToolTips = true;
             treeView.EndUpdate();
+        }
+
+        /// <summary>
+        /// Returns true if ignored files are shown in the current view, so they need to be recognized
+        /// </summary>
+        private static bool MarkIgnored()
+        {
+            return Properties.Settings.Default.ShowIgnoredFiles || Properties.Settings.Default.viewMode == 6;
         }
 
         /// <summary>
@@ -352,6 +401,10 @@ namespace GitForce.Main.Left.Panels
                         if (App.Repos.Current.Submodules.GetContainingSubmodule(s, out sm, out relativePath))
                             code = ' '; // Treat submodule files as tracked
                     }
+
+                    // Ignored files and folders are not in the git status: give them their own code
+                    if (MarkIgnored() && !status.IsMarked(s) && s.Length > 0 && status.IsIgnored(s))
+                        code = '!';
 
                     if (Opclass.ContainsKey(code))
                         Opclass[code].Add(s);
@@ -487,6 +540,7 @@ namespace GitForce.Main.Left.Panels
         /// </summary>
         private readonly Dictionary<char, FileOps[]> ops = new Dictionary<char, FileOps[]> {
             {'?', new[]{ FileOps.Add, FileOps.DeleteFs, FileOps.Edit }},
+            {'!', new[]{ FileOps.DeleteFs, FileOps.Edit }},
             {' ', new[]{ FileOps.Rename, FileOps.Delete, FileOps.DeleteFs, FileOps.Edit, FileOps.Diff}},
             {'M', new[]{ FileOps.Update, FileOps.UpdateAll, FileOps.Revert, FileOps.Delete, FileOps.DeleteFs, FileOps.Edit, FileOps.Diff}},
             {'T', new[]{ FileOps.Update, FileOps.UpdateAll, FileOps.Revert, FileOps.Delete, FileOps.DeleteFs, FileOps.Edit, FileOps.Diff}},
@@ -538,6 +592,11 @@ namespace GitForce.Main.Left.Panels
                 StatusButtons[allowedOp].Enabled = true;
 
             App.MainForm.BuildFileMenu();
+
+            // Show the selected file in the diff panel at the bottom of the main window
+            App.MainForm.ShowFileDiff(treeView.SelectedNodes.Count == 1 && treeView.SelectedNodes[0].Tag != null
+                ? treeView.SelectedNodes[0].Tag.ToString()
+                : null);
         }
 
         /// <summary>
@@ -570,6 +629,13 @@ namespace GitForce.Main.Left.Panels
             ToolStripMenuItem mRevert = new ToolStripMenuItem("Revert", null, MenuViewRevertClick);
             ToolStripMenuItem mStage = new ToolStripMenuItem("Stage", null, MenuViewStageClick) { ToolTipText = "Add all changes of the selected files and folders to the index" };
             ToolStripMenuItem mUnstage = new ToolStripMenuItem("Unstage", null, MenuViewUnstageClick) { ToolTipText = "Remove all changes of the selected files and folders from the index" };
+            ToolStripMenuItem mIgnore = new ToolStripMenuItem("Ignore (add to .gitignore)", null, MenuViewIgnoreClick) { ToolTipText = "Add the selected files, and folders with all of their content, to .gitignore" };
+            ToolStripMenuItem mUnignore = new ToolStripMenuItem("Unignore (make untracked)", null, MenuViewUnignoreClick) { ToolTipText = "Stop ignoring the selected files and folders, so they show up as untracked" };
+            ToolStripMenuItem mStash = new ToolStripMenuItem("Stash Selected...", null, (s, e) =>
+            {
+                if (FormStashSave.Stash(status.Repo, GetSelectedPaths()))
+                    App.DoRefresh();
+            }) { ToolTipText = "Put the changes of the selected files and folders aside" };
 
             // Build the "Diff vs" submenu
             ToolStripMenuItem mDiffIndex = new ToolStripMenuItem("Index", null, MenuViewDiffClick) { ShortcutKeys = Keys.Control | Keys.D, Tag = "" };
@@ -634,6 +700,9 @@ namespace GitForce.Main.Left.Panels
             List<ToolStripItem> menuItems = new List<ToolStripItem> {
                 mStage,
                 mUnstage,
+                mIgnore,
+                mUnignore,
+                mStash,
                 new ToolStripSeparator(),
                 mUpdate,
                 mRevert,
@@ -679,7 +748,7 @@ namespace GitForce.Main.Left.Panels
             if (App.Repos.Current == null)
             {
                 mRevHist.Enabled = mExplore.Enabled = mCommand.Enabled = false;
-                mStage.Enabled = mUnstage.Enabled = false;
+                mStage.Enabled = mUnstage.Enabled = mIgnore.Enabled = mUnignore.Enabled = mStash.Enabled = false;
             }
             else
             {
@@ -692,6 +761,8 @@ namespace GitForce.Main.Left.Panels
 
                 // Stage and unstage work on any selection of files and folders
                 mStage.Enabled = mUnstage.Enabled = treeView.SelectedNodes.Count > 0;
+                mIgnore.Enabled = GetSelectedPaths().Any(p => p != ".");
+                mUnignore.Enabled = status != null && new Selection(treeView, status).Opclass.ContainsKey('!');
             }
             return menu;
         }
@@ -778,6 +849,63 @@ namespace GitForce.Main.Left.Panels
             List<string> paths = GetSelectedPaths();
             if (paths.Count > 0)
                 status.Repo.GitUnstage(paths);
+            App.DoRefresh();
+        }
+
+        /// <summary>
+        /// Add selected files and folders to .gitignore. Files that git already tracks are not
+        /// affected by .gitignore, so offer to stop tracking them (they stay on the disk).
+        /// </summary>
+        private void MenuViewIgnoreClick(object sender, EventArgs e)
+        {
+            List<string> paths = GetSelectedPaths().Where(p => p != ".").ToList();
+            if (paths.Count == 0)
+                return;
+            try
+            {
+                List<string> added = status.Repo.GitIgnore(paths);
+                List<string> tracked = status.Repo.GetTrackedFiles(paths);
+                if (tracked.Count > 0)
+                {
+                    string list = string.Join(Environment.NewLine, tracked.Take(15)) +
+                                  (tracked.Count > 15 ? Environment.NewLine + "... (" + tracked.Count + " files)" : "");
+                    if (MessageBox.Show("These files are already tracked by git, so .gitignore does not apply to them:" +
+                                        Environment.NewLine + Environment.NewLine + list + Environment.NewLine + Environment.NewLine +
+                                        "Stop tracking them? They will be kept on the disk and removed from the repository with the next commit.",
+                                        "Ignore", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                        status.Repo.GitUntrack(paths);
+                }
+                else if (added.Count == 0)
+                    App.PrintStatusMessage("Already in .gitignore", MessageType.General);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error updating .gitignore", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            App.DoRefresh();
+        }
+
+        /// <summary>
+        /// Stop ignoring the selected ignored files and folders: they become untracked
+        /// </summary>
+        private void MenuViewUnignoreClick(object sender, EventArgs e)
+        {
+            List<string> paths = new Selection(treeView, status).Files('!');
+            if (paths.Count == 0)
+                return;
+            try
+            {
+                List<string> still = status.Repo.GitUnignore(paths);
+                if (still.Count > 0)
+                    MessageBox.Show("These are still ignored, most likely because a folder containing them is ignored " +
+                                    "(git can not re-include a file from an ignored folder):" + Environment.NewLine + Environment.NewLine +
+                                    string.Join(Environment.NewLine, still.Take(15)),
+                                    "Unignore", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error updating .gitignore", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
             App.DoRefresh();
         }
 

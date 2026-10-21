@@ -48,6 +48,13 @@ namespace GitForce
                 new AppHelper( "opendiff",       @"/usr/bin/opendiff",          "%1 %2 %3 %4" ), // Not tested!
         };
 
+        /// <summary>
+        /// Name and description of the built-in merge tool (FormMergeResolve)
+        /// </summary>
+        public const string BuiltInName = "GitForce";
+        public const string BuiltInLabel = "(GitForce built-in merge tool)";
+        public static readonly AppHelper BuiltIn = new AppHelper(BuiltInName, BuiltInLabel, string.Empty);
+
         private List<AppHelper> merge = new List<AppHelper>();
 
         /// <summary>
@@ -56,6 +63,8 @@ namespace GitForce
         /// </summary>
         public bool Initialize()
         {
+            if (IsBuiltIn())
+                return true;
             // Verify the application default merge utility
             AppHelper app = new AppHelper(Properties.Settings.Default.MergeAppHelper);
             if (File.Exists(app.Path))
@@ -67,12 +76,11 @@ namespace GitForce
             // Search for any of the predefined tools
             merge = GetDetected();
 
-            // If none of the pre-set merge apps are present, show the missing merge dialog
-            // and return with its selection of whether to continue or quit the app
+            // If none of the pre-set merge apps are present, use the built-in merge tool
             if (merge.Count == 0)
             {
-                FormMergeMissing formMergeMissing = new FormMergeMissing();
-                return formMergeMissing.ShowDialog() == DialogResult.OK;
+                Properties.Settings.Default.MergeAppHelper = BuiltIn.ToString();
+                return true;
             }
 
             // Otherwise, at least one merge app is present, select it as default
@@ -87,8 +95,8 @@ namespace GitForce
         /// </summary>
         public static void Configure(AppHelper app)
         {
-            // Configure application only if it is valid
-            if (app.Name != string.Empty)
+            // Configure application only if it is valid and external
+            if (app.Name != string.Empty && app.Name != BuiltInName)
             {
                 string path = app.Path.Replace('\\', '/');
                 string usr = app.Args.
@@ -105,6 +113,61 @@ namespace GitForce
                 ClassConfig.SetGlobal("merge.tool", app.Name);
                 ClassConfig.SetGlobal("mergetool.keepBackup", "false");
             }
+        }
+
+        /// <summary>
+        /// Returns true if the built-in merge tool is selected instead of an external tool
+        /// </summary>
+        public static bool IsBuiltIn()
+        {
+            return new AppHelper(Properties.Settings.Default.MergeAppHelper).Name == BuiltInName;
+        }
+
+        /// <summary>
+        /// Resolve the conflicts of the given files (all the unmerged files if none are given),
+        /// with the built-in merge tool or with the external one through "git mergetool"
+        /// </summary>
+        public static void ResolveConflicts(ClassRepo repo, List<string> files)
+        {
+            List<string> unmerged = new ClassStatus(repo).GetUnmerged();
+            List<string> todo = files == null ? new List<string>() : files.FindAll(f => unmerged.Contains(f));
+            if (todo.Count == 0)
+                todo = unmerged;
+            if (todo.Count == 0)
+            {
+                MessageBox.Show("There are no conflicts to resolve.", "Resolve conflicts", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            if (IsBuiltIn())
+            {
+                foreach (string file in todo)
+                    if (!FormMergeResolve.Resolve(repo, file))
+                        break;      // Cancelled: leave the other files for later
+            }
+            else
+                repo.RunCmd("mergetool " + GetMergeCmd() + (files != null && todo.Count == 1 ? " \"" + todo[0] + "\"" : string.Empty));
+            App.DoRefresh();
+        }
+
+        /// <summary>
+        /// Merge a branch into the current branch. If the merge stops on conflicts, offer to resolve them.
+        /// </summary>
+        public static void MergeBranch(ClassRepo repo, string branch)
+        {
+            ExecResult result = repo.RunCmd("merge --no-edit " + branch);
+            List<string> unmerged = new ClassStatus(repo).GetUnmerged();
+            if (unmerged.Count > 0)
+            {
+                if (MessageBox.Show(string.Format("Merging {0} stopped on conflicts in {1} file(s):\n\n{2}\n\nResolve them now?",
+                        branch, unmerged.Count, string.Join("\n", unmerged.GetRange(0, Math.Min(10, unmerged.Count)))),
+                        "Merge", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                    ResolveConflicts(repo, unmerged);
+                else
+                    App.PrintStatusMessage("Resolve the conflicts from the Commits tab (Resolve menu), then submit the merge.", MessageType.General);
+            }
+            else if (result.Success())
+                App.PrintStatusMessage("Merged " + branch, MessageType.General);
+            App.DoRefresh();
         }
 
         /// <summary>

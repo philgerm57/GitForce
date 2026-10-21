@@ -142,6 +142,15 @@ namespace GitForce
         }
 
         /// <summary>
+        /// Returns the files with merge conflicts ("unmerged" status codes)
+        /// </summary>
+        public List<string> GetUnmerged()
+        {
+            string[] codes = { "DD", "AU", "UD", "UA", "DU", "AA", "UU" };
+            return XY.Where(kv => codes.Contains(kv.Value)).Select(kv => kv.Key).ToList();
+        }
+
+        /// <summary>
         /// Return true if the repo is in the merge state
         /// </summary>
         public bool IsMergeState()

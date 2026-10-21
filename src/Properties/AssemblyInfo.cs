@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("A Visual Git Frontend Tool")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("GitForce")]
-[assembly: AssemblyProduct("GitForce built on 2026/09/13")]
+[assembly: AssemblyProduct("GitForce built on 2026/10/20")]
 [assembly: AssemblyCopyright("Written by Goran Devic, released under GPLv3")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -22,7 +22,7 @@ using System.Runtime.InteropServices;
 [assembly: Guid("ac46f858-a555-4b13-9a78-700d6dfaabb4")]
 
 // Remains fixed as application persistent settings are keyed off this number
-[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyVersion("2.1.0.0")]
 
 // Effective application version number
-[assembly: AssemblyFileVersion("1.0.69")]
+[assembly: AssemblyFileVersion("2.1.70")]

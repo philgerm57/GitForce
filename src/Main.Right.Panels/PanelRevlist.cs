@@ -25,6 +25,14 @@ namespace GitForce.Main.Right.Panels
             InitializeComponent();
 
             App.Refresh += RevlistRefresh;
+
+            // A click on a commit lists its files at the right of the log
+            listRev.SelectedIndexChanged += (s, e) =>
+            {
+                string sha = GetSelectedSha();
+                if (sha != null && listRev.Focused && App.MainForm != null)
+                    App.MainForm.ShowCommitFiles(sha);
+            };
         }
 
         /// <summary>
@@ -236,6 +244,18 @@ namespace GitForce.Main.Right.Panels
         public ToolStripItemCollection GetContextMenu(ToolStrip owner)
         {
             ToolStripMenuItem mDescribe = new ToolStripMenuItem("Describe Changelist...", null, MenuDescribeClick);
+            ToolStripMenuItem mEditMessage = new ToolStripMenuItem("Edit Commit Message...", null, (s, e) =>
+            {
+                string sha = GetSelectedSha();
+                if (sha != null)
+                    ClassHistoryEdit.EditMessage(App.Repos.Current, sha);
+            });
+            ToolStripMenuItem mNewTag = new ToolStripMenuItem("New Tag Here...", null, (s, e) =>
+            {
+                string sha = GetSelectedSha();
+                if (sha != null)
+                    ClassHistoryEdit.NewTag(App.Repos.Current, sha);
+            });
             ToolStripMenuItem mReset = new ToolStripMenuItem("Reset", null, MenuResetClick);
             ToolStripMenuItem mCherry = new ToolStripMenuItem("Cherry pick", null, MenuCherryPickClick);
             ToolStripMenuItem mCopy = new ToolStripMenuItem("Copy SHA", null, MenuCopyShaClick);
@@ -243,7 +263,7 @@ namespace GitForce.Main.Right.Panels
             ToolStripMenuItem mClearColors = new ToolStripMenuItem("Clear Colors", null, MenuClearColorsClick);
 
             ToolStripItemCollection menu = new ToolStripItemCollection(owner, new ToolStripItem[] {
-                mDescribe, mReset, mCherry,
+                mDescribe, mEditMessage, mNewTag, mReset, mCherry,
                 new ToolStripSeparator(),
                 mCopy,
                 new ToolStripSeparator(),
@@ -251,7 +271,7 @@ namespace GitForce.Main.Right.Panels
             });
 
             // Enable menu items only if there was a change selected
-            mDescribe.Enabled = mReset.Enabled = mCherry.Enabled = mCopy.Enabled = mColor.Enabled = (GetSelectedSha() != null);
+            mDescribe.Enabled = mEditMessage.Enabled = mNewTag.Enabled = mReset.Enabled = mCherry.Enabled = mCopy.Enabled = mColor.Enabled = (GetSelectedSha() != null);
             mClearColors.Enabled = ((App.Repos.Current != null) && (App.Repos.Current.RevColors.Count > 0));
 
             return menu;
