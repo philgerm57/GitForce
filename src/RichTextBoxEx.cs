@@ -127,6 +127,13 @@ namespace GitForce
         }
 
         private readonly List<MonoLinkInfo> _monoLinks = new List<MonoLinkInfo>();
+
+        /// <summary>
+        /// Links inserted with a hidden hyperlink, with their full "text#hyperlink" string.
+        /// The rich edit control used by .NET reports only the visible text of a clicked link,
+        /// without the hidden part, so the hyperlink is looked up here by the link position.
+        /// </summary>
+        private readonly List<MonoLinkInfo> _hiddenLinks = new List<MonoLinkInfo>();
         private bool _lastOverLink;
 
         public RichTextBoxEx()
@@ -262,6 +269,7 @@ namespace GitForce
             {
                 SelectionStart = position;
                 SelectedRtf = @"{\rtf1\ansi "+text+@"\v #"+hyperlink+@"\v0}";
+                _hiddenLinks.Add(new MonoLinkInfo { Start = position, Length = text.Length + hyperlink.Length + 1, LinkText = text + "#" + hyperlink });
                 Select(position, text.Length + hyperlink.Length + 1);
                 SetSelectionLink(true);
                 LightenLinkBackground();
@@ -417,6 +425,43 @@ namespace GitForce
         public void ClearMonoLinks()
         {
             _monoLinks.Clear();
+            _hiddenLinks.Clear();
+        }
+
+        protected override void OnTextChanged(EventArgs e)
+        {
+            if (TextLength == 0)
+                _hiddenLinks.Clear();
+            base.OnTextChanged(e);
+        }
+
+        /// <summary>
+        /// Give the handlers the full "text#hyperlink" string of a link with a hidden hyperlink
+        /// </summary>
+        protected override void OnLinkClicked(LinkClickedEventArgs e)
+        {
+            string text = e.LinkText ?? string.Empty;
+            if (text.IndexOf('#') < 0)
+            {
+                foreach (MonoLinkInfo link in _hiddenLinks)
+                {
+                    if (e.LinkStart >= link.Start && e.LinkStart < link.Start + link.Length)
+                    {
+                        base.OnLinkClicked(new LinkClickedEventArgs(link.LinkText, e.LinkStart, e.LinkLength));
+                        return;
+                    }
+                }
+                // Positions did not match (text changed around the link): match the visible text
+                foreach (MonoLinkInfo link in _hiddenLinks)
+                {
+                    if (text.Length > 0 && link.LinkText.StartsWith(text.Trim() + "#", StringComparison.Ordinal))
+                    {
+                        base.OnLinkClicked(new LinkClickedEventArgs(link.LinkText, e.LinkStart, e.LinkLength));
+                        return;
+                    }
+                }
+            }
+            base.OnLinkClicked(e);
         }
 
         public void AppendText(string text, Color color)

@@ -47,9 +47,7 @@ namespace GitForce
         /// </summary>
         private void BtMergeClick(object sender, EventArgs e)
         {
-            string cmd = "merge " + listBranches.SelectedItem;
-
-            App.Repos.Current.RunCmd(cmd);
+            ClassMerge.MergeBranch(App.Repos.Current, listBranches.SelectedItem.ToString());
         }
     }
 }

@@ -26,6 +26,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- French getting started guide, shown from the Help menu -->
+    <EmbeddedResource Include="Resources\Help\GitForce-Guide-FR.pdf" LogicalName="GitForce-Guide-FR.pdf" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

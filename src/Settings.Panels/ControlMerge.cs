@@ -31,6 +31,7 @@ namespace GitForce.Settings.Panels
         {
             // Detect all merge utilities on the system and populate a listbox
             helpers = ClassMerge.GetDetected();
+            helpers.Insert(0, ClassMerge.BuiltIn);
             comboBoxPath.Items.Clear();
             foreach (var appHelper in helpers)
                 comboBoxPath.Items.Add(appHelper.Path);
@@ -62,7 +63,9 @@ namespace GitForce.Settings.Panels
                 try
                 {
                     string name = Path.GetFileNameWithoutExtension(comboBoxPath.Text.Trim());
-                    AppHelper app = new AppHelper(name, comboBoxPath.Text, textArgs.Text.Trim());
+                    AppHelper app = comboBoxPath.Text.Trim() == ClassMerge.BuiltInLabel
+                        ? ClassMerge.BuiltIn
+                        : new AppHelper(name, comboBoxPath.Text, textArgs.Text.Trim());
                     Properties.Settings.Default.MergeAppHelper = app.ToString();
 
                     ClassMerge.Configure(app);

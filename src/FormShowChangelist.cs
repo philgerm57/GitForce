@@ -175,6 +175,8 @@ namespace GitForce
             // The LinkText as sent contains the text + link separated by '#' character.
             // Use the link portion only to send to our handlers.
             string[] chunk = e.LinkText.Split('#');
+            if (chunk.Length < 4)
+                return;     // Not one of our file links
             contextMenuFile.Tag = chunk[1];
             if (chunk[2] != "0000000")      // SHA of the previous revision of a file
             {

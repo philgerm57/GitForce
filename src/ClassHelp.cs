@@ -26,6 +26,40 @@ namespace GitForce
         };
 
         /// <summary>
+        /// Open the French getting started guide. It is embedded in the program: write it to the
+        /// temporary folder and hand it to the PDF reader associated with it.
+        /// </summary>
+        public static void OpenFrenchGuide()
+        {
+            const string name = "GitForce-Guide-FR.pdf";
+            try
+            {
+                string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "GitForce");
+                System.IO.Directory.CreateDirectory(dir);
+                string file = System.IO.Path.Combine(dir, name);
+                using (System.IO.Stream res = typeof(ClassHelp).Assembly.GetManifestResourceStream(name))
+                {
+                    if (res == null)
+                        throw new System.IO.FileNotFoundException("The guide is missing from this build of GitForce.", name);
+                    using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
+                    {
+                        res.CopyTo(ms);
+                        byte[] data = ms.ToArray();
+                        // Rewrite it only when it changed: the file may be open in the reader
+                        if (!System.IO.File.Exists(file) || new System.IO.FileInfo(file).Length != data.Length)
+                            System.IO.File.WriteAllBytes(file, data);
+                    }
+                }
+                ClassUtils.ShellOpen(file);
+            }
+            catch (System.Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show("Unable to open the guide: " + ex.Message, "Guide de démarrage",
+                    System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
         /// Given the topic, open the relevant help page online
         /// </summary>
         public static void Handler(string topic)
