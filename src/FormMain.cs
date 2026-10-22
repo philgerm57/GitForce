@@ -49,8 +49,9 @@ namespace GitForce
         private readonly ListView listCommitFiles = new ListView();
         private readonly Label labelCommit = new Label();
         private readonly Timer commitTimer = new Timer { Interval = 120 };
-        private string commitPending;
+        private string commitPending, commitPendingStash;
         private string commitSha, commitParent;
+        private readonly ContextMenuStrip commitFilesMenu = new ContextMenuStrip();
 
         private static readonly Dictionary<string, UserControl> PanelsR = new Dictionary<string, UserControl> {
             { "Commits", PanelCommits },
@@ -141,6 +142,8 @@ namespace GitForce
             commitTimer.Tick += (s, e) => LoadCommitFiles();
 
             AddThemeMenu();
+            AddToolbarIconMenu();
+            ApplyToolbarIconSize(Properties.Settings.Default.ToolbarIconSize);
 
             // View > Graph: the commit graph of all branches, next to the Revisions tab
             menuMainView.DropDownItems.Insert(menuMainView.DropDownItems.IndexOf(menuMainSubmittedChanges) + 1,
@@ -560,6 +563,83 @@ namespace GitForce
         }
 
         /// <summary>
+        /// Original (16 pixel) images of the toolbar buttons, scaled from for each icon size
+        /// </summary>
+        private readonly Dictionary<ToolStripItem, Image> toolbarImages = new Dictionary<ToolStripItem, Image>();
+
+        /// <summary>
+        /// View > Toolbar Icons: small, medium or large icons in the main toolbar
+        /// </summary>
+        private void AddToolbarIconMenu()
+        {
+            ToolStripMenuItem mIcons = new ToolStripMenuItem("Toolbar Icons");
+            foreach (var size in new[] { new { Text = "Small (16)", Px = 16 }, new { Text = "Medium (24)", Px = 24 }, new { Text = "Large (32)", Px = 32 } })
+            {
+                int px = size.Px;
+                mIcons.DropDownItems.Add(new ToolStripMenuItem(size.Text, null, (s, e) =>
+                {
+                    Properties.Settings.Default.ToolbarIconSize = px;
+                    ApplyToolbarIconSize(px);
+                }) { Tag = px });
+            }
+            mIcons.DropDownOpening += (s, e) =>
+            {
+                foreach (ToolStripMenuItem m in mIcons.DropDownItems)
+                    m.Checked = (int)m.Tag == Properties.Settings.Default.ToolbarIconSize;
+            };
+            menuMainView.DropDownItems.Add(mIcons);
+        }
+
+        /// <summary>
+        /// Resize the icons of the main toolbar. The images are made for 16 pixels with a
+        /// transparent color: that color is made transparent first, then the image is scaled
+        /// with a smooth interpolation, so that the larger icons are neither blocky nor fringed.
+        /// </summary>
+        private void ApplyToolbarIconSize(int size)
+        {
+            if (size != 16 && size != 24 && size != 32)
+                size = 24;
+            float factor = size / 16f;
+            toolStrip.SuspendLayout();
+            toolStrip.ImageScalingSize = new Size(size, size);
+            foreach (ToolStripItem item in toolStrip.Items)
+            {
+                if (!toolbarImages.ContainsKey(item))
+                {
+                    if (item.Image == null)
+                        continue;
+                    Bitmap original = new Bitmap(item.Image);
+                    if (item.ImageTransparentColor != Color.Empty)
+                        original.MakeTransparent(item.ImageTransparentColor);
+                    toolbarImages[item] = original;
+                }
+                Image source = toolbarImages[item];
+                int w = Math.Max(1, (int)Math.Round(source.Width * factor)), h = Math.Max(1, (int)Math.Round(source.Height * factor));
+                Bitmap scaled = new Bitmap(w, h);
+                using (Graphics g = Graphics.FromImage(scaled))
+                {
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                    g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                    using (var attr = new System.Drawing.Imaging.ImageAttributes())
+                    {
+                        attr.SetWrapMode(System.Drawing.Drawing2D.WrapMode.TileFlipXY);   // No dark border at the edges
+                        g.DrawImage(source, new Rectangle(0, 0, w, h), 0, 0, source.Width, source.Height, GraphicsUnit.Pixel, attr);
+                    }
+                }
+                Image old = item.Image;
+                item.ImageTransparentColor = Color.Empty;
+                item.ImageScaling = ToolStripItemImageScaling.None;
+                item.Image = scaled;
+                item.AutoSize = true;
+                if (old != null && !ReferenceEquals(old, source) && !toolbarImages.ContainsValue(old))
+                    old.Dispose();
+            }
+            toolStrip.ResumeLayout();
+            toolStrip.PerformLayout();
+        }
+
+        /// <summary>
         /// Show a file in the bottom diff panel: its last committed version on the left and the
         /// current one on the right. A null or folder path empties the panel.
         /// </summary>
@@ -640,6 +720,8 @@ namespace GitForce
                     ShowCommitFileDiff((string[])listCommitFiles.SelectedItems[0].Tag);
             };
             listCommitFiles.ShowItemToolTips = true;
+            commitFilesMenu.Opening += CommitFilesMenuOpening;
+            listCommitFiles.ContextMenuStrip = commitFilesMenu;
 
             splitLog.Panel2.Controls.Add(listCommitFiles);
             splitLog.Panel2.Controls.Add(labelCommit);
@@ -649,9 +731,10 @@ namespace GitForce
         /// List the files changed by a commit (against its first parent) at the right of the log.
         /// Called when a commit is clicked in the Revisions or the Graph tab.
         /// </summary>
-        public void ShowCommitFiles(string sha)
+        public void ShowCommitFiles(string sha, string stash = null)
         {
             commitPending = sha;
+            commitPendingStash = stash;
             commitTimer.Stop();
             commitTimer.Start();
         }
@@ -710,7 +793,19 @@ namespace GitForce
                     else if (kind == 'R' || kind == 'C') item.ForeColor = dark ? Color.FromArgb(110, 160, 240) : Color.FromArgb(0, 80, 190);
                     listCommitFiles.Items.Add(item);
                 }
-                labelCommit.Text = commitSha.Substring(0, 7) + "  " + subject + "   (" + listCommitFiles.Items.Count + " file(s))";
+                if (commitPendingStash != null)
+                {
+                    // The untracked files of a stash are kept in its third parent
+                    string untracked = DiffViewControl.RunGitRaw(dir, "ls-tree -r -z --name-only " + commitSha + "^3");
+                    foreach (string path in untracked.Split(new[] { '\0' }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        ListViewItem item = new ListViewItem("?") { ToolTipText = "Untracked file saved in the stash" };
+                        item.SubItems.Add(path);
+                        item.Tag = new[] { "?", path, path, commitSha + "^3" };
+                        listCommitFiles.Items.Add(item);
+                    }
+                }
+                labelCommit.Text = (commitPendingStash ?? commitSha.Substring(0, 7)) + "  " + subject + "   (" + listCommitFiles.Items.Count + " file(s))";
             }
             catch (Exception ex)
             {
@@ -744,7 +839,7 @@ namespace GitForce
                     string oldPath = file[1], path = file[2];
                     int exitCode;
                     byte[] previous = null, current = null;
-                    if (kind != 'A' && parent.Length > 0)
+                    if (kind != 'A' && kind != '?' && parent.Length > 0)
                     {
                         previous = DiffViewControl.RunGitBytes(repo.Path, "show \"" + parent + ":" + oldPath + "\"", out exitCode);
                         if (exitCode != 0)
@@ -752,7 +847,8 @@ namespace GitForce
                     }
                     if (kind != 'D')
                     {
-                        current = DiffViewControl.RunGitBytes(repo.Path, "show \"" + sha + ":" + path + "\"", out exitCode);
+                        string tree = file.Length > 3 ? file[3] : sha;
+                        current = DiffViewControl.RunGitBytes(repo.Path, "show \"" + tree + ":" + path + "\"", out exitCode);
                         if (exitCode != 0)
                             current = null;
                     }
@@ -771,6 +867,110 @@ namespace GitForce
         }
 
         #endregion
+
+        /// <summary>
+        /// Context menu of a file of a commit or a stash
+        /// </summary>
+        private void CommitFilesMenuOpening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            commitFilesMenu.Items.Clear();
+            ClassRepo repo = App.Repos.Current;
+            if (repo == null || listCommitFiles.SelectedItems.Count != 1 || string.IsNullOrEmpty(commitSha))
+            {
+                e.Cancel = true;
+                return;
+            }
+            string[] f = (string[])listCommitFiles.SelectedItems[0].Tag;
+            char kind = f[0][0];
+            string path = f[2], sha = commitSha;
+            string full = Path.Combine(repo.Path, path.Replace('/', Path.DirectorySeparatorChar));
+            bool exists = File.Exists(full);
+            bool untracked = kind == '?';
+
+            commitFilesMenu.Items.Add(new ToolStripMenuItem("File History", null, (s, a) =>
+                new FormRevisionHistory(path.Replace('/', Path.DirectorySeparatorChar)) { Sha = sha }.Show()) { Enabled = !untracked });
+            commitFilesMenu.Items.Add(new ToolStripMenuItem("Blame", null, (s, a) => FormBlame.ShowBlame(repo, sha, path)) { Enabled = !untracked && kind != 'D' });
+            commitFilesMenu.Items.Add(new ToolStripSeparator());
+            commitFilesMenu.Items.Add(new ToolStripMenuItem("Open in Editor...", null, (s, a) =>
+            {
+                try { ClassUtils.ShellOpen(full); }
+                catch (Exception ex) { MessageBox.Show(ex.Message, "Open in Editor", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            }) { Enabled = exists });
+            commitFilesMenu.Items.Add(new ToolStripMenuItem("Open in Built-in Viewer", null, (s, a) => FormFileViewer.View(full)) { Enabled = exists });
+            commitFilesMenu.Items.Add(new ToolStripMenuItem("Open Containing Folder...", null, (s, a) =>
+                ClassUtils.ExplorerHere(Path.GetDirectoryName(full), exists ? full : string.Empty)));
+            commitFilesMenu.Items.Add(new ToolStripMenuItem("Copy File Path", null, (s, a) => Clipboard.SetText(full)));
+            commitFilesMenu.Items.Add(new ToolStripSeparator());
+            commitFilesMenu.Items.Add(new ToolStripMenuItem("Revert File", null, (s, a) => ApplyCommitFilePatch(f, true))
+                { ToolTipText = "Undo the changes this commit made to the file, in the working copy" });
+            commitFilesMenu.Items.Add(new ToolStripMenuItem("Cherry Pick File", null, (s, a) => ApplyCommitFilePatch(f, false))
+                { ToolTipText = "Apply the changes this commit made to the file, in the working copy" });
+            commitFilesMenu.Items.Add(new ToolStripMenuItem("Save Patch...", null, (s, a) => SaveCommitFilePatch(f)));
+        }
+
+        /// <summary>
+        /// The patch of one file of the listed commit (or stash), against the previous version
+        /// </summary>
+        private byte[] CommitFilePatch(string[] f)
+        {
+            const string emptyTree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+            char kind = f[0][0];
+            string from = kind == '?' || string.IsNullOrEmpty(commitParent) ? emptyTree : commitParent;
+            string to = f.Length > 3 ? f[3] : commitSha;
+            string paths = f[1] != f[2] ? "\"" + f[1] + "\" \"" + f[2] + "\"" : "\"" + f[2] + "\"";
+            int code;
+            return DiffViewControl.RunGitBytes(App.Repos.Current.Path, "diff --binary --full-index -M " + from + " " + to + " -- " + paths, out code);
+        }
+
+        /// <summary>
+        /// Apply the patch of a file of the commit to the working copy (reversed to revert it).
+        /// When the file changed since, a three-way merge leaves conflict markers to resolve.
+        /// </summary>
+        private void ApplyCommitFilePatch(string[] f, bool reverse)
+        {
+            ClassRepo repo = App.Repos.Current;
+            string what = (reverse ? "Revert" : "Cherry pick") + " the changes of " + (commitPendingStash ?? commitSha.Substring(0, 7)) + " to " + f[2];
+            if (MessageBox.Show(what + " in your working copy?", reverse ? "Revert File" : "Cherry Pick File",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
+            string patch = Path.Combine(Path.GetTempPath(), "GitForce-" + Guid.NewGuid().ToString("N") + ".patch");
+            try
+            {
+                File.WriteAllBytes(patch, CommitFilePatch(f));
+                string args = "apply " + (reverse ? "-R " : "") + "\"" + patch.Replace('\\', '/') + "\"";
+                if (!repo.RunCmd(args).Success())
+                {
+                    // The file changed since: merge the change instead (this stages the result, or leaves conflicts)
+                    ExecResult three = repo.RunCmd("apply --3way " + (reverse ? "-R " : "") + "\"" + patch.Replace('\\', '/') + "\"");
+                    if (!three.Success() && new ClassStatus(repo).GetUnmerged().Count > 0)
+                        ClassMerge.ResolveConflicts(repo, null);
+                    else if (!three.Success())
+                        MessageBox.Show(three.stderr.Trim(), what, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            finally
+            {
+                try { File.Delete(patch); } catch (Exception) { }
+            }
+            App.DoRefresh();
+        }
+
+        private void SaveCommitFilePatch(string[] f)
+        {
+            using (SaveFileDialog dlg = new SaveFileDialog
+            {
+                Title = "Save Patch",
+                FileName = Path.GetFileName(f[2]) + ".patch",
+                Filter = "Patch files (*.patch;*.diff)|*.patch;*.diff|All files (*.*)|*.*"
+            })
+            {
+                if (dlg.ShowDialog() == DialogResult.OK)
+                {
+                    File.WriteAllBytes(dlg.FileName, CommitFilePatch(f));
+                    App.PrintStatusMessage("Patch saved to " + dlg.FileName, MessageType.General);
+                }
+            }
+        }
 
         private void UpdateFileDiff()
         {
