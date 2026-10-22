@@ -7,7 +7,7 @@ GitForce est une interface graphique pour l'outil en ligne de commande **git**, 
 > Cette version a été portée sur .NET 10 et enrichie des fonctions décrites ci-dessous.
 > Les problèmes de cette version sont à signaler sur ce dépôt, pas sur le dépôt d'origine.
 
-<img src="docs/gitforce-main-window.png" />
+<img src="screen.png" alt="Fenêtre principale de GitForce : arbre des fichiers, graphe des commits, fichiers du commit et diff en bas" />
 
 ## Modifications par rapport à GitForce d'origine
 
