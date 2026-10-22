@@ -45,7 +45,9 @@ namespace GitForce
         private Action diffLoader;
 
         // Files of the commit selected in the Revisions or Graph tab, shown at the right of the log
-        private readonly SplitContainer splitLog = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical, Name = "splitLog" };
+        // Log of the git commands and the command line, in a tab of their own: it is mostly
+        // looked at when something goes wrong, so it shows "Log (!)" after an error
+        private readonly TabPage logPage = new TabPage("Log") { Name = "Log", Tag = "Log", ToolTipText = "Log of the git commands (F12)" };
         private readonly ListView listCommitFiles = new ListView();
         private readonly Label labelCommit = new Label();
         private readonly Timer commitTimer = new Timer { Interval = 120 };
@@ -122,9 +124,16 @@ namespace GitForce
             splitRight.Panel1.Controls.Add(rightTabControl);
             splitContainer1.Panel2.Controls.Remove(listStatus);
             splitContainer1.Panel2.Controls.Remove(cmdBox);
-            splitLog.Panel1.Controls.Add(listStatus);
-            splitLog.Panel1.Controls.Add(cmdBox);
-            splitRight.Panel2.Controls.Add(splitLog);
+            logPage.Controls.Add(listStatus);
+            logPage.Controls.Add(cmdBox);
+            rightTabControl.TabPages.Add(logPage);
+            rightTabControl.SelectedIndexChanged += (s, e) =>
+            {
+                if (rightTabControl.SelectedTab == logPage)
+                    logPage.Text = "Log";
+            };
+            menuMainView.DropDownItems.Insert(menuMainView.DropDownItems.IndexOf(menuMainRepos) + 1,
+                new ToolStripMenuItem("Git Command Log", null, RightPanelSelectionEvent, Keys.F12) { Tag = "Log" });
             InitCommitFiles();
             splitContainer2.Panel2.Controls.Add(splitRight);
             DiffView.Dock = DockStyle.Fill;
@@ -482,7 +491,7 @@ namespace GitForce
         /// </summary>
         private void RestoreLayout()
         {
-            double top = 0.55, left = 0.62, tabs = 0.62, log = 0.5;
+            double top = 0.55, left = 0.62, tabs = 0.68;
             string[] saved = (Properties.Settings.Default.MainLayout ?? string.Empty).Split(';');
             if (saved.Length >= 3)
             {
@@ -490,12 +499,10 @@ namespace GitForce
                 if (double.TryParse(saved[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) top = v;
                 if (double.TryParse(saved[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) left = v;
                 if (double.TryParse(saved[2], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) tabs = v;
-                if (saved.Length >= 4 && double.TryParse(saved[3], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) log = v;
             }
             SetSplit(splitContainer1, top);
             SetSplit(splitContainer2, left);
             SetSplit(splitRight, tabs);
-            SetSplit(splitLog, log);
         }
 
         private static void SetSplit(SplitContainer split, double fraction)
@@ -521,7 +528,7 @@ namespace GitForce
             if (WindowState == FormWindowState.Minimized)
                 return;
             Properties.Settings.Default.MainLayout = string.Join(";", new[] {
-                GetSplit(splitContainer1), GetSplit(splitContainer2), GetSplit(splitRight), GetSplit(splitLog) }
+                GetSplit(splitContainer1), GetSplit(splitContainer2), GetSplit(splitRight) }
                 .Select(d => d.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)));
         }
 
@@ -723,8 +730,8 @@ namespace GitForce
             commitFilesMenu.Opening += CommitFilesMenuOpening;
             listCommitFiles.ContextMenuStrip = commitFilesMenu;
 
-            splitLog.Panel2.Controls.Add(listCommitFiles);
-            splitLog.Panel2.Controls.Add(labelCommit);
+            splitRight.Panel2.Controls.Add(listCommitFiles);
+            splitRight.Panel2.Controls.Add(labelCommit);
         }
 
         /// <summary>
@@ -1107,6 +1114,10 @@ namespace GitForce
                 }
                 listStatus.TopIndex = listStatus.Items.Count - 1;
 
+                // The log is in a tab: flag an error on the tab when another tab is shown
+                if (type == MessageType.Error && rightTabControl.SelectedTab != logPage)
+                    logPage.Text = "Log (!)";
+
                 App.PrintLogMessage(message, type);
             }
         }
@@ -1424,6 +1435,7 @@ namespace GitForce
             cmdBox.Visible = !@checked;
             if (cmdBox.Visible)
             {
+                ChangeRightPanel("Log");
                 cmdBox.SelectAll();
                 cmdBox.Focus();
             }
