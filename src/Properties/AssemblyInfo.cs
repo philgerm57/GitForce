@@ -25,4 +25,4 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyVersion("2.1.0.0")]
 
 // Effective application version number
-[assembly: AssemblyFileVersion("2.1.70")]
+[assembly: AssemblyFileVersion("2.2.00")]

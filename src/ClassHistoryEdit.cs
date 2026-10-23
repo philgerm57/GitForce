@@ -14,100 +14,188 @@ namespace GitForce
     /// </summary>
     public static class ClassHistoryEdit
     {
-        #region Edit the message of a commit
+        #region Edit the message and the author of a commit
 
         /// <summary>
-        /// Let the user edit the message of a commit and rewrite it. The last commit is amended;
-        /// an older commit of the current branch is rewritten with a rebase that rewords it,
-        /// which also rewrites the commits after it.
+        /// A commit that can be rewritten: the last commit, or an older commit of the current
+        /// branch that is not a merge
         /// </summary>
-        public static bool EditMessage(ClassRepo repo, string sha)
+        private class Target
         {
-            ExecResult info = repo.Run("log -1 --format=%H%x1f%P%x1f%B " + sha);
-            if (!info.Success())
-                return false;
-            string[] f = info.stdout.Split(new[] { '\x1f' }, 3);
-            if (f.Length < 3)
-                return false;
-            string full = f[0].Trim();
-            string[] parents = f[1].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            string message = f[2].TrimEnd();
+            public string Sha, Message, AuthorName, AuthorEmail;
+            public string[] Parents;
+            public bool IsHead;
+            public int Distance;        // Number of commits after it on the branch
+        }
 
-            string head = repo.Run("rev-parse HEAD").stdout.Trim();
-            bool isHead = full == head;
-            if (!isHead)
+        /// <summary>
+        /// Check that a commit can be rewritten and warn when it is already pushed. Returns null if not.
+        /// </summary>
+        private static Target GetTarget(ClassRepo repo, string sha, string title)
+        {
+            ExecResult info = repo.Run("log -1 --format=%H%x1f%P%x1f%an%x1f%ae%x1f%B " + sha);
+            string[] f = info.Success() ? info.stdout.Split(new[] { '\x1f' }, 5) : new string[0];
+            if (f.Length < 5)
             {
-                if (!repo.Run("merge-base --is-ancestor " + full + " HEAD").Success())
+                MessageBox.Show("Unable to read commit " + sha + ":\n\n" + info.stderr, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
+            }
+            Target t = new Target
+            {
+                Sha = f[0].Trim(),
+                Parents = f[1].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries),
+                AuthorName = f[2],
+                AuthorEmail = f[3],
+                Message = f[4].Replace("\r\n", "\n").TrimEnd()
+            };
+            string head = repo.Run("rev-parse HEAD").stdout.Trim();
+            t.IsHead = t.Sha == head;
+            if (!t.IsHead)
+            {
+                if (!repo.Run("merge-base --is-ancestor " + t.Sha + " HEAD").Success())
                 {
-                    MessageBox.Show("Only the commits of the current branch can be edited. Switch to the branch of this commit first.",
-                        "Edit commit message", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return false;
+                    MessageBox.Show("Only the commits of the current branch can be changed. Switch to the branch of this commit first.",
+                        title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return null;
                 }
-                if (parents.Length > 1)
+                if (t.Parents.Length > 1)
                 {
-                    MessageBox.Show("The message of a merge commit can only be edited when it is the last commit of the branch.",
-                        "Edit commit message", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return false;
+                    MessageBox.Show("A merge commit can only be changed when it is the last commit of the branch.",
+                        title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return null;
                 }
-                if (new ClassStatus(repo).IsMergeState())
+                if (new ClassStatus(repo).IsMergeState() || Directory.Exists(Path.Combine(repo.Path, ".git", "rebase-merge")))
                 {
-                    MessageBox.Show("Finish or abort the merge in progress first.", "Edit commit message",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return false;
+                    MessageBox.Show("Finish or abort the merge or rebase in progress first.", title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return null;
                 }
+                int count;
+                int.TryParse(repo.Run("rev-list --count " + t.Sha + "..HEAD").stdout.Trim(), out count);
+                t.Distance = count;
+            }
+            return t;
+        }
+
+        private static bool ConfirmPushed(ClassRepo repo, Target t, string title)
+        {
+            string remotes = repo.Run("branch -r --contains " + t.Sha).stdout.Trim();
+            if (remotes.Length == 0)
+                return true;
+            return MessageBox.Show(
+                "This commit is already pushed (" + remotes.Split('\n')[0].Trim() + ").\n\n" +
+                "Changing it rewrites the history: the branch will have to be force-pushed, " +
+                "and other people working on it will have to reset their copy.\n\nChange it anyway?",
+                title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+        }
+
+        /// <summary>
+        /// Amend a commit with the given "git commit --amend" options. The last commit is amended
+        /// directly; an older one is reached with a rebase that stops on it ("edit"), is amended,
+        /// and the rebase continues, which also rewrites the commits after it.
+        /// Returns the new SHA of the commit, or null on failure.
+        /// </summary>
+        private static string Rewrite(ClassRepo repo, Target t, string amendArgs, Dictionary<string, string> env, string title)
+        {
+            ExecResult result;
+            if (t.IsHead)
+            {
+                // --only: what is staged stays out of the commit
+                result = RunGit(repo, "commit --amend --only -q " + amendArgs, env);
+                if (!result.Success())
+                {
+                    MessageBox.Show("The commit could not be changed:\n\n" + (result.stderr + result.stdout).Trim(), title,
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return null;
+                }
+                return repo.Run("rev-parse HEAD").stdout.Trim();
             }
 
-            string newMessage = FormTextInput.Ask("Edit commit message",
-                "Message of commit " + full.Substring(0, Math.Min(7, full.Length)) + ":", message, true);
-            if (newMessage == null || newMessage.Trim() == message.Trim() || newMessage.Trim().Length == 0)
-                return false;
+            string shortSha = t.Sha.Substring(0, 7);
+            var sequence = new Dictionary<string, string>
+            {
+                { "GIT_SEQUENCE_EDITOR", "sed -i -e 's/^pick \\(" + shortSha + "[0-9a-f]*\\)/edit \\1/'" },
+                { "GIT_EDITOR", "true" }
+            };
+            string from = t.Parents.Length == 0 ? "--root" : t.Sha + "^";
+            result = RunGit(repo, "rebase -i --autostash --rebase-merges " + from, sequence);
+            string stopped = repo.Run("rev-parse HEAD").stdout.Trim();
+            if (stopped != t.Sha)
+            {
+                RunGit(repo, "rebase --abort", null);
+                MessageBox.Show("The commit could not be reached; the branch was left as it was.\n\n" + (result.stderr + result.stdout).Trim(),
+                    title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
+            }
+            result = RunGit(repo, "commit --amend --only -q " + amendArgs, env);
+            if (result.Success())
+                result = RunGit(repo, "rebase --continue", sequence);
+            if (!result.Success())
+            {
+                RunGit(repo, "rebase --abort", null);
+                MessageBox.Show("The commit could not be changed; the branch was left as it was.\n\n" + (result.stderr + result.stdout).Trim(),
+                    title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
+            }
+            // The commit keeps its place on the branch: the same number of commits after it
+            return repo.Run("rev-parse HEAD~" + t.Distance).stdout.Trim();
+        }
 
-            // A commit that is already on a remote branch: rewriting it changes the shared history
-            string remotes = repo.Run("branch -r --contains " + full).stdout.Trim();
-            if (remotes.Length > 0 && MessageBox.Show(
-                    "This commit is already pushed (" + remotes.Split('\n')[0].Trim() + ").\n\n" +
-                    "Changing its message rewrites the history: the branch will have to be force-pushed, " +
-                    "and other people working on it will have to reset their copy.\n\nChange the message anyway?",
-                    "Edit commit message", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
-                return false;
+        /// <summary>
+        /// Let the user edit the message of a commit and rewrite it.
+        /// Returns the new SHA of the commit, or null if nothing was changed.
+        /// </summary>
+        public static string EditMessage(ClassRepo repo, string sha)
+        {
+            const string title = "Edit commit message";
+            Target t = GetTarget(repo, sha, title);
+            if (t == null)
+                return null;
+            string newMessage = FormTextInput.Ask(title, "Message of commit " + t.Sha.Substring(0, 7) + ":", t.Message, true);
+            if (newMessage == null || newMessage.Trim().Length == 0 || newMessage.Replace("\r\n", "\n").Trim() == t.Message.Trim())
+                return null;
+            if (!ConfirmPushed(repo, t, title))
+                return null;
 
             string msgFile = Path.Combine(Path.GetTempPath(), "GitForce-msg-" + Guid.NewGuid().ToString("N") + ".txt");
             try
             {
                 File.WriteAllText(msgFile, newMessage.Replace("\r\n", "\n").TrimEnd() + "\n", new UTF8Encoding(false));
-                string posix = msgFile.Replace('\\', '/');
-                ExecResult result;
-                if (isHead)
-                {
-                    // --only: change the message, leave what is staged out of the commit
-                    result = RunGit(repo, "commit --amend --only -q -F \"" + posix + "\"", null);
-                }
-                else
-                {
-                    // Rebase from the parent, turning the "pick" of this commit into "reword";
-                    // the editor called for the new message copies it from our file
-                    string shortSha = full.Substring(0, 7);
-                    var env = new Dictionary<string, string>
-                    {
-                        { "GIT_SEQUENCE_EDITOR", "sed -i -e 's/^pick \\(" + shortSha + "[0-9a-f]*\\)/reword \\1/'" },
-                        { "GIT_EDITOR", "cp '" + posix + "'" }
-                    };
-                    string from = parents.Length == 0 ? "--root" : full + "^";
-                    result = RunGit(repo, "rebase -i --autostash --rebase-merges " + from, env);
-                    if (!result.Success())
-                    {
-                        RunGit(repo, "rebase --abort", null);
-                        MessageBox.Show("The commit could not be rewritten; the branch was left as it was.\n\n" + result.stderr,
-                            "Edit commit message", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
+                string newSha = Rewrite(repo, t, "--cleanup=verbatim -F \"" + msgFile.Replace('\\', '/') + "\"", null, title);
                 App.DoRefresh();
-                return result.Success();
+                return newSha;
             }
             finally
             {
                 try { File.Delete(msgFile); } catch (Exception) { }
             }
+        }
+
+        /// <summary>
+        /// Let the user change the author (and optionally the committer) of a commit.
+        /// Returns the new SHA of the commit, or null if nothing was changed.
+        /// </summary>
+        public static string EditAuthor(ClassRepo repo, string sha)
+        {
+            const string title = "Edit commit author";
+            Target t = GetTarget(repo, sha, title);
+            if (t == null)
+                return null;
+            string name, email;
+            bool committer;
+            if (!FormAuthorInput.Ask(t.Sha.Substring(0, 7), t.AuthorName, t.AuthorEmail, out name, out email, out committer))
+                return null;
+            if (name == t.AuthorName && email == t.AuthorEmail && !committer)
+                return null;
+            if (!ConfirmPushed(repo, t, title))
+                return null;
+
+            string author = (name + " <" + email + ">").Replace("\"", "\\\"");
+            Dictionary<string, string> env = null;
+            if (committer)
+                env = new Dictionary<string, string> { { "GIT_COMMITTER_NAME", name }, { "GIT_COMMITTER_EMAIL", email } };
+            string newSha = Rewrite(repo, t, "--no-edit --author=\"" + author + "\"", env, title);
+            App.DoRefresh();
+            return newSha;
         }
 
         #endregion
@@ -322,6 +410,58 @@ namespace GitForce
                 else
                     text.SelectAll();
             };
+        }
+    }
+
+    /// <summary>
+    /// Dialog asking for the name and the e-mail of an author
+    /// </summary>
+    public class FormAuthorInput : Form
+    {
+        private readonly TextBox textName = new TextBox();
+        private readonly TextBox textEmail = new TextBox();
+        private readonly CheckBox checkCommitter = new CheckBox { Text = "Also set as committer", AutoSize = true };
+
+        public static bool Ask(string commit, string name, string email, out string newName, out string newEmail, out bool committer)
+        {
+            using (FormAuthorInput form = new FormAuthorInput(commit, name, email))
+            {
+                bool ok = form.ShowDialog() == DialogResult.OK;
+                newName = form.textName.Text.Trim();
+                newEmail = form.textEmail.Text.Trim();
+                committer = form.checkCommitter.Checked;
+                return ok && newName.Length > 0 && newEmail.Length > 0;
+            }
+        }
+
+        private FormAuthorInput(string commit, string name, string email)
+        {
+            Text = "Edit commit author";
+            Icon = Properties.Resources.git;
+            StartPosition = FormStartPosition.CenterParent;
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MinimizeBox = MaximizeBox = false;
+            ShowInTaskbar = false;
+            ClientSize = new Size(460, 180);
+
+            Label title = new Label { Text = "Author of commit " + commit + ":", Location = new Point(10, 10), AutoSize = true };
+            Label l1 = new Label { Text = "Name:", Location = new Point(10, 42), AutoSize = true };
+            Label l2 = new Label { Text = "E-mail:", Location = new Point(10, 74), AutoSize = true };
+            textName.Location = new Point(70, 38);
+            textName.Width = 380;
+            textName.Text = name;
+            textEmail.Location = new Point(70, 70);
+            textEmail.Width = 380;
+            textEmail.Text = email;
+            checkCommitter.Location = new Point(70, 102);
+            new ToolTip().SetToolTip(checkCommitter, "The committer is the person who last applied the commit (shown by some tools instead of the author)");
+
+            Button ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Size = new Size(85, 27), Location = new Point(272, 140) };
+            Button cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Size = new Size(85, 27), Location = new Point(365, 140) };
+            AcceptButton = ok;
+            CancelButton = cancel;
+            Controls.AddRange(new Control[] { title, l1, l2, textName, textEmail, checkCommitter, ok, cancel });
+            ClassTheme.Apply(this);
         }
     }
 }

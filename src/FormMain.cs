@@ -29,7 +29,14 @@ namespace GitForce
         private readonly DiffViewControl DiffView = new DiffViewControl();
 
         // Right side: the panels above, the log of git commands below
-        private readonly SplitContainer splitRight = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal, Name = "splitRight" };
+        private readonly SplitContainer splitRight = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical, Name = "splitRight" };
+
+        // Right of the tabs: the details of the selected commit above, its files below
+        private readonly SplitContainer splitCommit = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Horizontal, Name = "splitCommit" };
+        private readonly RichTextBox textCommitInfo = new RichTextBox();
+        private readonly ToolStrip commitInfoBar = new ToolStrip();
+        private readonly ToolStripButton btEditMessage = new ToolStripButton("Edit Message...") { Enabled = false };
+        private readonly ToolStripButton btEditAuthor = new ToolStripButton("Edit Author...") { Enabled = false };
 
         /// <summary>
         /// File shown in the bottom diff panel (relative to the repo root), and a short delay so
@@ -151,6 +158,7 @@ namespace GitForce
             commitTimer.Tick += (s, e) => LoadCommitFiles();
 
             AddThemeMenu();
+            AddRemoteMenu();
             AddToolbarIconMenu();
             ApplyToolbarIconSize(Properties.Settings.Default.ToolbarIconSize);
 
@@ -491,7 +499,7 @@ namespace GitForce
         /// </summary>
         private void RestoreLayout()
         {
-            double top = 0.55, left = 0.62, tabs = 0.68;
+            double top = 0.55, left = 0.45, tabs = 0.55, commit = 0.42;
             string[] saved = (Properties.Settings.Default.MainLayout ?? string.Empty).Split(';');
             if (saved.Length >= 3)
             {
@@ -499,10 +507,12 @@ namespace GitForce
                 if (double.TryParse(saved[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) top = v;
                 if (double.TryParse(saved[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) left = v;
                 if (double.TryParse(saved[2], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) tabs = v;
+                if (saved.Length >= 4 && double.TryParse(saved[3], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v)) commit = v;
             }
             SetSplit(splitContainer1, top);
             SetSplit(splitContainer2, left);
             SetSplit(splitRight, tabs);
+            SetSplit(splitCommit, commit);
         }
 
         private static void SetSplit(SplitContainer split, double fraction)
@@ -528,7 +538,7 @@ namespace GitForce
             if (WindowState == FormWindowState.Minimized)
                 return;
             Properties.Settings.Default.MainLayout = string.Join(";", new[] {
-                GetSplit(splitContainer1), GetSplit(splitContainer2), GetSplit(splitRight) }
+                GetSplit(splitContainer1), GetSplit(splitContainer2), GetSplit(splitRight), GetSplit(splitCommit) }
                 .Select(d => d.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)));
         }
 
@@ -573,6 +583,26 @@ namespace GitForce
         /// Original (16 pixel) images of the toolbar buttons, scaled from for each icon size
         /// </summary>
         private readonly Dictionary<ToolStripItem, Image> toolbarImages = new Dictionary<ToolStripItem, Image>();
+
+        /// <summary>
+        /// Remote menu, between Repository and Tools: the remote repository commands that were
+        /// at the bottom of the Settings menu. The items keep their handlers and the refresh code
+        /// that enables them.
+        /// </summary>
+        private void AddRemoteMenu()
+        {
+            ToolStripMenuItem menuMainRemote = new ToolStripMenuItem("Remote") { Name = "menuMainRemote" };
+            menuMainSettings.DropDownItems.Remove(toolStripSeparator5);
+            foreach (ToolStripItem item in new ToolStripItem[] { menuMainFetchFromRemote, menuMainPullFromRemote, menuMainPushToRemote })
+                menuMainSettings.DropDownItems.Remove(item);
+            menuMainSettings.DropDownItems.Remove(menuMainSwitchRemoteRepo);
+            menuMainSettings.DropDownItems.Remove(menuMainEditRemoteRepo);
+            menuMainRemote.DropDownItems.AddRange(new ToolStripItem[] {
+                menuMainFetchFromRemote, menuMainPullFromRemote, menuMainPushToRemote,
+                new ToolStripSeparator(),
+                menuMainSwitchRemoteRepo, menuMainEditRemoteRepo });
+            menuMain.Items.Insert(menuMain.Items.IndexOf(menuMainTools), menuMainRemote);
+        }
 
         /// <summary>
         /// View > Toolbar Icons: small, medium or large icons in the main toolbar
@@ -730,8 +760,24 @@ namespace GitForce
             commitFilesMenu.Opening += CommitFilesMenuOpening;
             listCommitFiles.ContextMenuStrip = commitFilesMenu;
 
-            splitRight.Panel2.Controls.Add(listCommitFiles);
-            splitRight.Panel2.Controls.Add(labelCommit);
+            splitCommit.Panel2.Controls.Add(listCommitFiles);
+            splitCommit.Panel2.Controls.Add(labelCommit);
+
+            textCommitInfo.Dock = DockStyle.Fill;
+            textCommitInfo.ReadOnly = true;
+            textCommitInfo.BorderStyle = BorderStyle.None;
+            textCommitInfo.DetectUrls = false;
+            textCommitInfo.BackColor = ClassTheme.Map(SystemColors.Window);
+            textCommitInfo.ScrollBars = RichTextBoxScrollBars.Vertical;
+            btEditMessage.ToolTipText = "Change the message of this commit";
+            btEditAuthor.ToolTipText = "Change the author (name and e-mail) of this commit";
+            btEditMessage.Click += (s, e) => EditSelectedCommit(true);
+            btEditAuthor.Click += (s, e) => EditSelectedCommit(false);
+            commitInfoBar.GripStyle = ToolStripGripStyle.Hidden;
+            commitInfoBar.Items.AddRange(new ToolStripItem[] { new ToolStripLabel("Commit"), new ToolStripSeparator(), btEditMessage, btEditAuthor });
+            splitCommit.Panel1.Controls.Add(textCommitInfo);
+            splitCommit.Panel1.Controls.Add(commitInfoBar);
+            splitRight.Panel2.Controls.Add(splitCommit);
         }
 
         /// <summary>
@@ -754,6 +800,8 @@ namespace GitForce
             listCommitFiles.Items.Clear();
             try
             {
+                textCommitInfo.Clear();
+                btEditMessage.Enabled = btEditAuthor.Enabled = false;
                 if (repo == null || string.IsNullOrEmpty(commitPending))
                     return;
                 string dir = repo.Path;
@@ -812,7 +860,8 @@ namespace GitForce
                         listCommitFiles.Items.Add(item);
                     }
                 }
-                labelCommit.Text = (commitPendingStash ?? commitSha.Substring(0, 7)) + "  " + subject + "   (" + listCommitFiles.Items.Count + " file(s))";
+                labelCommit.Text = listCommitFiles.Items.Count + " file(s)" + (commitPendingStash != null ? " in " + commitPendingStash : string.Empty);
+                ShowCommitInfo(dir);
             }
             catch (Exception ex)
             {
@@ -822,6 +871,73 @@ namespace GitForce
             {
                 listCommitFiles.EndUpdate();
             }
+        }
+
+        /// <summary>
+        /// Details of the listed commit: SHA, author, date, committer, parents, branches and tags,
+        /// changes, and the whole message
+        /// </summary>
+        private void ShowCommitInfo(string dir)
+        {
+            string[] f = DiffViewControl.RunGitRaw(dir, "show -s --decorate=short --format=%H%x1f%an%x1f%ae%x1f%at%x1f%cn%x1f%ce%x1f%ct%x1f%P%x1f%D%x1f%B " + commitSha).Split(new[] { '\x1f' }, 10);
+            if (f.Length < 10)
+                return;
+            Func<string, DateTime> date = unix =>
+            {
+                long t;
+                return long.TryParse(unix.Trim(), out t) ? DateTimeOffset.FromUnixTimeSeconds(t).LocalDateTime : DateTime.MinValue;
+            };
+            string stat = commitParent.Length > 0 ? DiffViewControl.RunGitRaw(dir, "diff --shortstat " + commitParent + " " + commitSha).Trim() : string.Empty;
+
+            Color label = Color.Gray;
+            Font bold = new Font(textCommitInfo.Font, FontStyle.Bold);
+            Action<string, string> row = (name, value) =>
+            {
+                if (string.IsNullOrEmpty(value))
+                    return;
+                textCommitInfo.SelectionColor = label;
+                textCommitInfo.SelectionFont = textCommitInfo.Font;
+                textCommitInfo.AppendText(name + "	");
+                textCommitInfo.SelectionColor = textCommitInfo.ForeColor;
+                textCommitInfo.AppendText(value + "\n");
+            };
+            textCommitInfo.Clear();
+            row(commitPendingStash != null ? "Stash" : "Commit", (commitPendingStash != null ? commitPendingStash + "  " : string.Empty) + f[0]);
+            row("Author", f[1] + " <" + f[2] + ">");
+            row("Date", date(f[3]).ToString("f"));
+            if (f[4] != f[1] || f[5] != f[2])
+                row("Committer", f[4] + " <" + f[5] + ">  " + date(f[6]).ToString("g"));
+            row("Parents", string.Join("  ", f[7].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Substring(0, Math.Min(10, p.Length)))));
+            if (commitPendingStash == null)
+                row("Refs", f[8].Trim());
+            row("Changes", stat);
+            textCommitInfo.AppendText("\n");
+            textCommitInfo.SelectionFont = bold;
+            textCommitInfo.SelectionColor = textCommitInfo.ForeColor;
+            string message = f[9].Replace("\r\n", "\n").TrimEnd();
+            int nl = message.IndexOf('\n');
+            textCommitInfo.AppendText((nl < 0 ? message : message.Substring(0, nl)) + "\n");
+            textCommitInfo.SelectionFont = textCommitInfo.Font;
+            if (nl >= 0)
+                textCommitInfo.AppendText(message.Substring(nl + 1).TrimStart('\n') + "\n");
+            // Align the values on a tab stop (the font is proportional)
+            textCommitInfo.SelectAll();
+            textCommitInfo.SelectionTabs = new[] { TextRenderer.MeasureText("Committer  ", textCommitInfo.Font).Width };
+            textCommitInfo.Select(0, 0);
+            btEditMessage.Enabled = btEditAuthor.Enabled = commitPendingStash == null;
+        }
+
+        /// <summary>
+        /// Edit the message or the author of the listed commit, then show it again (it has a new SHA)
+        /// </summary>
+        private void EditSelectedCommit(bool message)
+        {
+            ClassRepo repo = App.Repos.Current;
+            if (repo == null || string.IsNullOrEmpty(commitSha))
+                return;
+            string newSha = message ? ClassHistoryEdit.EditMessage(repo, commitSha) : ClassHistoryEdit.EditAuthor(repo, commitSha);
+            if (!string.IsNullOrEmpty(newSha))
+                ShowCommitFiles(newSha);
         }
 
         /// <summary>
