@@ -612,6 +612,7 @@ namespace GitForce.Main.Right.Panels
             }
             contextMenu.Items.Add(new ToolStripMenuItem("Describe Changelist...", null, (s, a) => Describe(grid.CurrentCell.RowIndex)));
             contextMenu.Items.Add(new ToolStripMenuItem("Edit Commit Message...", null, (s, a) => ClassHistoryEdit.EditMessage(repo, r.Sha)));
+            contextMenu.Items.Add(new ToolStripMenuItem("Edit Commit Author...", null, (s, a) => ClassHistoryEdit.EditAuthor(repo, r.Sha)));
             contextMenu.Items.Add(new ToolStripMenuItem("Copy SHA1", null, (s, a) => Clipboard.SetText(r.Sha)));
             contextMenu.Items.Add(new ToolStripSeparator());
             contextMenu.Items.Add(new ToolStripMenuItem("New Branch Here...", null, (s, a) => ClassHistoryEdit.NewBranchAt(repo, r.Sha)));

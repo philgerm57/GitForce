@@ -20,6 +20,19 @@ namespace GitForce.Main.Left.Panels
         /// </summary>
         private readonly ToolStripMenuItem menuView6 = new ToolStripMenuItem("Ignored Files") { Tag = "6" };
         private readonly ToolStripMenuItem menuView7 = new ToolStripMenuItem("Changed Files (flat list)") { Tag = "7" };
+
+        /// <summary>
+        /// Filter of the files shown in the tree, applied a moment after the user stops typing
+        /// </summary>
+        private readonly ToolStripTextBox textFilter = new ToolStripTextBox { AutoSize = false, Width = 140 };
+        private readonly ToolStripButton btClearFilter = new ToolStripButton("\u2715") { DisplayStyle = ToolStripItemDisplayStyle.Text, Visible = false, ToolTipText = "Clear the filter (Esc)" };
+        private readonly Timer filterTimer = new Timer { Interval = 350 };
+
+        /// <summary>
+        /// True while the tree is expanded to show the files that match the filter: that
+        /// expansion is not remembered as the state of the folders
+        /// </summary>
+        private bool expandingForFilter;
         private readonly ToolStripMenuItem menuShowIgnored = new ToolStripMenuItem("Show Ignored Files") { CheckOnClick = true };
 
         /// <summary>
@@ -33,6 +46,40 @@ namespace GitForce.Main.Left.Panels
 
             menuView6.Click += ViewSetByMenuItem;
             dropViewMode.DropDownItems.Insert(6, menuView6);
+            textFilter.TextBox.PlaceholderText = "Filter: *.cs  .py  name  !exclude";
+            textFilter.ToolTipText = "Show only the matching files:\n" +
+                                     "  *.cs or .cs  - by extension (wildcards * and ? are allowed)\n" +
+                                     "  Panel        - name or path containing the text\n" +
+                                     "  !test        - leave out what contains the text\n" +
+                                     "Several filters are separated by spaces. Esc clears the filter.";
+            textFilter.TextChanged += (s, e) =>
+            {
+                btClearFilter.Visible = textFilter.Text.Length > 0;
+                filterTimer.Stop();
+                filterTimer.Start();
+            };
+            textFilter.KeyDown += (s, e) =>
+            {
+                if (e.KeyCode == Keys.Escape)
+                    textFilter.Text = string.Empty;
+                else if (e.KeyCode == Keys.Enter)
+                {
+                    filterTimer.Stop();
+                    ViewRefresh();
+                }
+                else
+                    return;
+                e.SuppressKeyPress = true;
+            };
+            filterTimer.Tick += (s, e) =>
+            {
+                filterTimer.Stop();
+                ViewRefresh();
+            };
+            btClearFilter.Click += (s, e) => textFilter.Text = string.Empty;
+            toolStrip1.Items.Insert(toolStrip1.Items.IndexOf(viewLabel) + 1, textFilter);
+            toolStrip1.Items.Insert(toolStrip1.Items.IndexOf(textFilter) + 1, btClearFilter);
+
             menuView7.Click += ViewSetByMenuItem;
             menuView7.ToolTipText = "All the changed files, staged or not, and the new files, in one list with their full path";
             dropViewMode.DropDownItems.Insert(7, menuView7);
@@ -258,6 +305,15 @@ namespace GitForce.Main.Left.Panels
                         break;
                 }
 
+                // Keep only the files that match the filter
+                bool filtering = textFilter.Text.Trim().Length > 0;
+                if (filtering)
+                {
+                    int total = files.Count;
+                    files = Filter(files, textFilter.Text);
+                    viewLabel.Text = dropViewMode.DropDownItems[mode].Text + " (" + files.Count + "/" + total + ")";
+                }
+
                 // Build the tree view (or a list view)
                 TreeNode node = new TreeNode(App.Repos.Current.Path) { Tag = String.Empty };
 
@@ -284,11 +340,53 @@ namespace GitForce.Main.Left.Panels
                 // Always keep the root node expanded by default
                 node.Expand();
 
-                // Finally, expand the rest of the tree to its previous expand state
-                ViewExpand(node);
+                // Finally, expand the rest of the tree to its previous expand state,
+                // or completely to show all the files that match the filter
+                if (filtering)
+                {
+                    expandingForFilter = true;
+                    node.ExpandAll();
+                    expandingForFilter = false;
+                }
+                else
+                    ViewExpand(node);
             }
             treeView.ShowNodeToolTips = true;
             treeView.EndUpdate();
+        }
+
+        /// <summary>
+        /// Keep the files that match a filter: words separated by spaces (or ; and ,). A word with
+        /// * or ? is a wildcard pattern for the file name ("*.cs"), or for the path if it has a
+        /// folder separator; ".cs" is an extension; other words are found anywhere in the path.
+        /// A word starting with ! leaves out the files it matches. Case is ignored.
+        /// </summary>
+        public static List<string> Filter(List<string> files, string filter)
+        {
+            List<Func<string, bool>> include = new List<Func<string, bool>>();
+            List<Func<string, bool>> exclude = new List<Func<string, bool>>();
+            foreach (string w in filter.Split(new[] { ' ', ';', ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                bool not = w.StartsWith("!");
+                string word = (not ? w.Substring(1) : w).Replace('/', Path.DirectorySeparatorChar);
+                if (word.Length == 0)
+                    continue;
+                Func<string, bool> match;
+                if (word.IndexOf('*') >= 0 || word.IndexOf('?') >= 0)
+                {
+                    var regex = new System.Text.RegularExpressions.Regex(
+                        "^" + System.Text.RegularExpressions.Regex.Escape(word).Replace("\\*", ".*").Replace("\\?", ".") + "$",
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    bool onPath = word.IndexOf(Path.DirectorySeparatorChar) >= 0;
+                    match = f => regex.IsMatch(onPath ? f : Path.GetFileName(f.TrimEnd(Path.DirectorySeparatorChar)));
+                }
+                else if (word.StartsWith(".") && word.IndexOf(Path.DirectorySeparatorChar) < 0)
+                    match = f => f.EndsWith(word, StringComparison.OrdinalIgnoreCase);
+                else
+                    match = f => f.IndexOf(word, StringComparison.OrdinalIgnoreCase) >= 0;
+                (not ? exclude : include).Add(match);
+            }
+            return files.Where(f => (include.Count == 0 || include.Any(m => m(f))) && !exclude.Any(m => m(f))).ToList();
         }
 
         /// <summary>
@@ -331,7 +429,8 @@ namespace GitForce.Main.Left.Panels
         private void TreeViewAfterExpand(object sender, TreeViewEventArgs e)
         {
             TreeNode tn = e.Node;
-            App.Repos.Current.ExpansionSet(tn.Tag.ToString());
+            if (!expandingForFilter)
+                App.Repos.Current.ExpansionSet(tn.Tag.ToString());
             tn.ImageIndex |= 1;
         }
 

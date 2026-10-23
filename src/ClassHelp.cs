@@ -8,6 +8,11 @@ namespace GitForce
     static class ClassHelp
     {
         /// <summary>
+        /// GitHub repository of this version of GitForce (a fork of gdevic/GitForce)
+        /// </summary>
+        public const string ProjectUrl = "https://github.com/philgerm57/GitForce";
+
+        /// <summary>
         /// Dictionary containing the translation of help topics to the web pages
         /// </summary>
         private static readonly Dictionary<string, string> Webhelp = new Dictionary<string, string>
@@ -18,8 +23,8 @@ namespace GitForce
             {"HTTPS Authentication", @"https://confluence.atlassian.com/fisheye/permanent-authentication-for-git-repositories-over-http-s-298977121.html"},
             {"SSH Windows", @"https://baltazarstudios.com/software/gitforce-ssh"},
             {"Workspace", @"https://baltazarstudios.com/software/gitforce-workspaces"},
-            {"Update Check", @"https://github.com/gdevic/GitForce/releases"},
-            {"Download", @"https://github.com/gdevic/GitForce/releases"},
+            {"Update Check", ProjectUrl + "/releases"},
+            {"Download", ProjectUrl + "/releases/latest"},
             {"Discussion", @"https://sourceforge.net/p/gitforce/discussion"},
             {"GPLv3", @"https://www.gnu.org/licenses/gpl-3.0.en.html"},
             {"BaltazarStudios", @"https://www.baltazarstudios.com" }

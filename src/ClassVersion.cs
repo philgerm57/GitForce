@@ -58,11 +58,14 @@ namespace GitForce
         public ClassVersion()
         {
 #if !DEBUG
-            // Create a web request object
-            ServicePointManager.SecurityProtocol |= (SecurityProtocolType)0x00000C00; // SecurityProtocolType.Tls12;
-            string query = "?v=" + GetVersion() + (ClassUtils.IsMono() ? "&r=Mono" : "&r=.NET") + "&u=" + Environment.UserName;
-            request = WebRequest.Create("http://baltazarstudios.com/uc/GitForce/index.php" + query);
-            request.Timeout = 5000;
+            // Ask GitHub for the latest release of this version of GitForce. Nothing about the
+            // user is sent; GitHub requires a User-Agent header.
+            HttpWebRequest web = (HttpWebRequest)WebRequest.Create(
+                ClassHelp.ProjectUrl.Replace("https://github.com/", "https://api.github.com/repos/") + "/releases/latest");
+            web.UserAgent = "GitForce/" + GetVersion();
+            web.Accept = "application/vnd.github+json";
+            web.Timeout = 5000;
+            request = web;
 
             // Create and start the thread to check for the new version
             threadCheck = new Thread(() => ThreadVersionCheck(request)) { IsBackground = true };
@@ -116,9 +119,11 @@ namespace GitForce
         /// </summary>
         private void ParseNewVersionResponse(StringBuilder answer)
         {
-            // Search for the version string, for example:
-            // [assembly: AssemblyFileVersion(&quot;1.0.11&quot;)]
-            string sPattern = @"GitForce-(?<major>\d+).(?<minor>\d+).(?<build>\d+).exe";
+            // The version is the tag of the latest GitHub release ("tag_name": "v1.0.71"),
+            // or else the name of its installer (GitForce-Setup-1.0.71.0.exe)
+            string sPattern = @"""tag_name""\s*:\s*""[vV]?\.?(?<major>\d+)\.(?<minor>\d+)\.(?<build>\d+)";
+            if (!Regex.IsMatch(answer.ToString(), sPattern))
+                sPattern = @"GitForce-(?:Setup-)?(?<major>\d+)\.(?<minor>\d+)\.(?<build>\d+)";
             Regex r = new Regex(sPattern, RegexOptions.Compiled);
             if (r.IsMatch(answer.ToString()))
             {
