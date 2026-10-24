@@ -159,6 +159,7 @@ namespace GitForce
 
             AddThemeMenu();
             AddRemoteMenu();
+            InitAutoRefresh();
             AddToolbarIconMenu();
             ApplyToolbarIconSize(Properties.Settings.Default.ToolbarIconSize);
 
@@ -583,6 +584,208 @@ namespace GitForce
         /// Original (16 pixel) images of the toolbar buttons, scaled from for each icon size
         /// </summary>
         private readonly Dictionary<ToolStripItem, Image> toolbarImages = new Dictionary<ToolStripItem, Image>();
+
+        #region Automatic refresh when files change
+
+        private FileSystemWatcher workTreeWatcher;
+        private string watchedRoot;
+        private readonly HashSet<string> changedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private bool gitStateChanged;           // HEAD, branches, tags or the index changed outside GitForce
+        private bool refreshPending;            // Changes seen while GitForce was not the active window
+        private long ignoreIndexUntil;          // Ticks: the index changes that GitForce itself causes are ignored
+        private readonly Timer autoRefreshTimer = new Timer { Interval = 900 };
+        private ToolStripMenuItem menuAutoRefresh;
+
+        private void InitAutoRefresh()
+        {
+            menuAutoRefresh = new ToolStripMenuItem("Auto Refresh") { CheckOnClick = true, Checked = Properties.Settings.Default.AutoRefresh,
+                ToolTipText = "Refresh the views when files of the repository change, also from other programs" };
+            menuAutoRefresh.CheckedChanged += (s, e) =>
+            {
+                Properties.Settings.Default.AutoRefresh = menuAutoRefresh.Checked;
+                UpdateWorkTreeWatcher();
+            };
+            menuMainView.DropDownItems.Insert(menuMainView.DropDownItems.IndexOf(menuMainRefresh) + 1, menuAutoRefresh);
+            autoRefreshTimer.Tick += (s, e) => AutoRefresh();
+            Activated += (s, e) =>
+            {
+                if (refreshPending)
+                {
+                    autoRefreshTimer.Stop();
+                    autoRefreshTimer.Start();
+                }
+            };
+            FormClosing += (s, e) => StopWorkTreeWatcher();
+        }
+
+        /// <summary>
+        /// Watch the folder of the current repository (again, when the repository changed)
+        /// </summary>
+        private void UpdateWorkTreeWatcher()
+        {
+            string root = Properties.Settings.Default.AutoRefresh && App.Repos.Current != null ? App.Repos.Current.Path : null;
+            if (root != null && Directory.Exists(root) && root == watchedRoot && workTreeWatcher != null)
+                return;
+            StopWorkTreeWatcher();
+            if (root == null || !Directory.Exists(root))
+                return;
+            try
+            {
+                watchedRoot = root;
+                workTreeWatcher = new FileSystemWatcher(root)
+                {
+                    IncludeSubdirectories = true,
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite | NotifyFilters.Size,
+                    InternalBufferSize = 64 * 1024
+                };
+                workTreeWatcher.Changed += OnWorkTreeChanged;
+                workTreeWatcher.Created += OnWorkTreeChanged;
+                workTreeWatcher.Deleted += OnWorkTreeChanged;
+                workTreeWatcher.Renamed += (s, e) => { OnWorkTreeChanged(s, e); OnWorkTreePath(e.OldFullPath); };
+                // Too many changes at once: the list is lost, refresh everything
+                workTreeWatcher.Error += (s, e) => { lock (changedPaths) gitStateChanged = true; ArmAutoRefresh(); };
+                workTreeWatcher.EnableRaisingEvents = true;
+            }
+            catch (Exception ex)
+            {
+                App.PrintLogMessage("Auto refresh: unable to watch " + root + ": " + ex.Message, MessageType.Error);
+                StopWorkTreeWatcher();
+            }
+        }
+
+        private void StopWorkTreeWatcher()
+        {
+            watchedRoot = null;
+            if (workTreeWatcher != null)
+            {
+                workTreeWatcher.EnableRaisingEvents = false;
+                workTreeWatcher.Dispose();
+                workTreeWatcher = null;
+            }
+        }
+
+        private void OnWorkTreeChanged(object sender, FileSystemEventArgs e)
+        {
+            OnWorkTreePath(e.FullPath);
+        }
+
+        /// <summary>
+        /// A file changed (called on a thread of the watcher). Inside .git, only the changes that
+        /// tell of a commit, a checkout, a new branch or tag, or staged files matter.
+        /// </summary>
+        private void OnWorkTreePath(string fullPath)
+        {
+            string root = watchedRoot;
+            if (root == null || fullPath == null || !fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+                return;
+            string rel = fullPath.Substring(root.Length).TrimStart(Path.DirectorySeparatorChar);
+            string git = ".git" + Path.DirectorySeparatorChar;
+            if (rel.Equals(".git", StringComparison.OrdinalIgnoreCase))
+                return;
+            if (rel.StartsWith(git, StringComparison.OrdinalIgnoreCase))
+            {
+                string inside = rel.Substring(git.Length);
+                if (inside.EndsWith(".lock", StringComparison.OrdinalIgnoreCase))
+                    return;
+                bool index = inside.Equals("index", StringComparison.OrdinalIgnoreCase);
+                bool refs = inside.Equals("HEAD", StringComparison.OrdinalIgnoreCase) || inside.Equals("packed-refs", StringComparison.OrdinalIgnoreCase) ||
+                            inside.Equals("MERGE_HEAD", StringComparison.OrdinalIgnoreCase) ||
+                            inside.StartsWith("refs" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+                if (!index && !refs)
+                    return;
+                if (index && DateTime.UtcNow.Ticks < System.Threading.Interlocked.Read(ref ignoreIndexUntil))
+                    return;
+                lock (changedPaths)
+                    gitStateChanged = true;
+            }
+            else
+            {
+                lock (changedPaths)
+                    changedPaths.Add(rel);
+            }
+            ArmAutoRefresh();
+        }
+
+        /// <summary>
+        /// (Re)start the delay: the refresh happens once the changes have stopped for a moment
+        /// </summary>
+        private void ArmAutoRefresh()
+        {
+            if (IsDisposed || !IsHandleCreated)
+                return;
+            BeginInvoke((MethodInvoker)(() =>
+            {
+                autoRefreshTimer.Stop();
+                autoRefreshTimer.Start();
+            }));
+        }
+
+        private void AutoRefresh()
+        {
+            autoRefreshTimer.Stop();
+            ClassRepo repo = App.Repos.Current;
+            if (repo == null || watchedRoot == null)
+                return;
+            // Wait while another window (a dialog, another program) is active: refresh when GitForce comes back
+            if (ActiveForm != this)
+            {
+                refreshPending = true;
+                return;
+            }
+            refreshPending = false;
+
+            List<string> paths;
+            bool git;
+            lock (changedPaths)
+            {
+                paths = changedPaths.ToList();
+                git = gitStateChanged;
+                changedPaths.Clear();
+                gitStateChanged = false;
+            }
+            if (!git && paths.Count == 0)
+                return;
+
+            // Changes only to ignored files (build output...) are not shown: nothing to refresh
+            if (!git && paths.Count <= 200)
+            {
+                string args = "check-ignore -- " + string.Join(" ", paths.Select(p => "\"" + p.Replace('\\', '/') + "\""));
+                if (args.Length < 30000)
+                {
+                    int code;
+                    string ignored = Encoding.UTF8.GetString(DiffViewControl.RunGitBytes(repo.Path, args, out code));
+                    int count = ignored.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Length;
+                    if (code == 0 && count >= paths.Count)
+                        return;
+                }
+            }
+
+            System.Threading.Interlocked.Exchange(ref ignoreIndexUntil, DateTime.UtcNow.AddSeconds(3).Ticks);
+            if (git)
+            {
+                // A commit, checkout, branch, tag or stage from outside: refresh everything
+                App.DoRefresh();
+                return;
+            }
+            SelectiveRefresh(SelectveRefreshFlags.View | SelectveRefreshFlags.Commits);
+
+            // Option of Settings > Files: keep the staged files up to date with their changes
+            if (Properties.Settings.Default.ReaddOnChange && repo.Status != null)
+            {
+                List<string> modified = repo.Status.GetFiles().Where(f => repo.Status.Xcode(f) != ' ' && repo.Status.Xcode(f) != '?' && repo.Status.Ycode(f) == 'M').ToList();
+                if (modified.Count > 0)
+                {
+                    repo.GitUpdate(modified);
+                    SelectiveRefresh(SelectveRefreshFlags.View | SelectveRefreshFlags.Commits);
+                }
+            }
+            // The working file shown in the diff panel may be one of those that changed
+            if (diffFile != null)
+                ShowFileDiff(diffFile);
+            System.Threading.Interlocked.Exchange(ref ignoreIndexUntil, DateTime.UtcNow.AddSeconds(2).Ticks);
+        }
+
+        #endregion
 
         /// <summary>
         /// Remote menu, between Repository and Tools: the remote repository commands that were
@@ -1308,6 +1511,10 @@ namespace GitForce
         /// </summary>
         private void FormMainRefresh()
         {
+            // Watch the current repository; the files that git just rewrote are not news
+            UpdateWorkTreeWatcher();
+            System.Threading.Interlocked.Exchange(ref ignoreIndexUntil, DateTime.UtcNow.AddSeconds(2).Ticks);
+
             // The selected file may have changed (commit, revert, edit...): show it again
             if (diffFile != null)
                 ShowFileDiff(diffFile);
