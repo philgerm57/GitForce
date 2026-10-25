@@ -20,6 +20,11 @@ namespace GitForce
         private readonly string amendText;
 
         /// <summary>
+        /// The description that was in the box before "amend" put the previous one in its place
+        /// </summary>
+        private string textBeforeAmend;
+
+        /// <summary>
         /// Create a commit form or new/update form
         /// </summary>
         public FormCommit(bool forCommit, string description)
@@ -39,18 +44,17 @@ namespace GitForce
                 checkAmend.Text = "Copy description of a previous change for the amend operation";
             }
 
-            // Fetch the description of a previous commit for the amend option
-            ExecResult result = App.Repos.Current.Run("log --pretty=format:%s%n%b -1");
-            if (result.Success())
-            {
-                amendText = result.stdout;
-                // The %b (body) format token does not include the blank line that
-                // conventionally separates the subject from the body, so reinsert it.
-                if (amendText.IndexOf(Environment.NewLine) > 0)
-                    amendText = amendText.Insert(amendText.IndexOf(Environment.NewLine), Environment.NewLine);
-            }
+            // Fetch the whole message of the last commit for the amend option (%B keeps the blank
+            // line between the subject and the body, and the lines as they were written)
+            string message = DiffViewControl.RunGitRaw(App.Repos.Current.Path, "log -1 --format=%B").Replace("\r\n", "\n").TrimEnd();
+            if (message.Length > 0)
+                amendText = message.Replace("\n", Environment.NewLine);
             else
-                amendText = "Unknown";
+            {
+                // No commit yet: there is nothing to amend
+                amendText = string.Empty;
+                checkAmend.Enabled = false;
+            }
             textDescription.Text = description;
             textDescription.SelectAll();
         }
@@ -114,13 +118,18 @@ namespace GitForce
         {
             if (checkAmend.Checked)
             {
-                // If the text in the description box has not been changed,
-                // swap it with the text of a previous commit (for amend)
-                if (GetDescription() == "Default" || GetDescription() == "Update")
-                    textDescription.Text = amendText;
-
-                // In any case copy the text to the OS clipboard
-                Clipboard.SetText(amendText);
+                // Amend keeps the message of the last commit: put it in the box, ready to be
+                // submitted as it is or edited
+                textBeforeAmend = textDescription.Text;
+                textDescription.Text = amendText;
+                textDescription.Select(textDescription.TextLength, 0);
+                textDescription.Focus();
+            }
+            else if (textBeforeAmend != null && textDescription.Text == amendText)
+            {
+                // Unchecked without editing the message: give back the description that was there
+                textDescription.Text = textBeforeAmend;
+                textBeforeAmend = null;
             }
         }
 

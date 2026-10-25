@@ -99,10 +99,27 @@ namespace GitForce.Main.Right.Panels
             grid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             grid.EnableHeadersVisualStyles = false;
             grid.RowTemplate.Height = Math.Max(20, Font.Height + 7);
-            grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Graph / Description", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill, FillWeight = 100, SortMode = DataGridViewColumnSortMode.NotSortable });
+            // No "Fill" column: with one, widening a column on the right can only take the room
+            // of the description, and stops (or jumps back) once that one is at its minimum.
+            // The description takes the room left instead, and a horizontal scroll bar appears
+            // when the columns are wider than the panel.
+            grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Graph / Description", Width = 300, MinimumWidth = 120, SortMode = DataGridViewColumnSortMode.NotSortable });
             grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Author", Width = 110, SortMode = DataGridViewColumnSortMode.NotSortable });
             grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Date", Width = 115, SortMode = DataGridViewColumnSortMode.NotSortable });
             grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "SHA1", Width = 65, SortMode = DataGridViewColumnSortMode.NotSortable });
+            RestoreColumnWidths();
+            grid.Resize += (s, e) => FitDescription();
+            grid.ColumnWidthChanged += (s, e) =>
+            {
+                if (sizingColumns)
+                    return;
+                if (e.Column.Index > 0)
+                {
+                    SaveColumnWidths();
+                    FitDescription();
+                }
+            };
+            grid.ScrollBars = ScrollBars.Both;
             grid.CellValueNeeded += GridCellValueNeeded;
             grid.CellPainting += GridCellPainting;
             grid.CellDoubleClick += (s, e) => { if (e.RowIndex >= 0) Describe(e.RowIndex); };
@@ -112,6 +129,16 @@ namespace GitForce.Main.Right.Panels
                 GraphRow r = SelectedRow();
                 if (r != null && grid.Focused && App.MainForm != null)
                     App.MainForm.ShowCommitFiles(r.Sha, r.IsStash ? r.ShortSha : null);
+            };
+            // A click on the commit that is already selected (the last one, after loading) does
+            // not change the selection: show its files on the click itself
+            grid.CellClick += (s, e) =>
+            {
+                if (e.RowIndex >= 0 && e.RowIndex < rows.Count && App.MainForm != null)
+                {
+                    GraphRow r = rows[e.RowIndex];
+                    App.MainForm.ShowCommitFiles(r.Sha, r.IsStash ? r.ShortSha : null);
+                }
             };
             grid.CellMouseDown += (s, e) =>
             {
@@ -129,6 +156,12 @@ namespace GitForce.Main.Right.Panels
             };
 
             contextMenu.Opening += ContextMenuOpening;
+            ClassIcons.Attach(contextMenu);
+            if (Properties.Settings.Default.ModernIcons)
+            {
+                btRefresh.Image = ClassIcons.Get("refresh", 16);
+                btRefresh.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
+            }
             grid.ContextMenuStrip = contextMenu;
 
             Controls.Add(grid);
@@ -136,6 +169,43 @@ namespace GitForce.Main.Right.Panels
 
             App.Refresh += () => { dirty = true; if (Visible) LoadGraph(); };
             VisibleChanged += (s, e) => { if (Visible && dirty) LoadGraph(); };
+        }
+
+        private bool sizingColumns;
+
+        /// <summary>
+        /// The description column takes the width left by the other columns, but not less than its minimum
+        /// </summary>
+        private void FitDescription()
+        {
+            if (grid.Columns.Count < 4)
+                return;
+            int others = 0;
+            for (int i = 1; i < grid.Columns.Count; i++)
+                others += grid.Columns[i].Width;
+            int room = grid.ClientSize.Width - others - (grid.DisplayedRowCount(false) < grid.RowCount ? SystemInformation.VerticalScrollBarWidth : 0) - 2;
+            sizingColumns = true;
+            grid.Columns[0].Width = Math.Max(grid.Columns[0].MinimumWidth, room);
+            sizingColumns = false;
+        }
+
+        private void RestoreColumnWidths()
+        {
+            string[] w = (Properties.Settings.Default.GraphColumnWidths ?? string.Empty).Split(',');
+            sizingColumns = true;
+            for (int i = 1; i < grid.Columns.Count && i - 1 < w.Length; i++)
+            {
+                int width;
+                if (int.TryParse(w[i - 1], out width) && width >= 20 && width <= 1000)
+                    grid.Columns[i].Width = width;
+            }
+            sizingColumns = false;
+        }
+
+        private void SaveColumnWidths()
+        {
+            Properties.Settings.Default.GraphColumnWidths = string.Join(",",
+                Enumerable.Range(1, grid.Columns.Count - 1).Select(i => grid.Columns[i].Width.ToString()));
         }
 
         protected override void OnHandleCreated(EventArgs e)
@@ -172,7 +242,7 @@ namespace GitForce.Main.Right.Panels
         private void LoadGraph()
         {
             dirty = false;
-            ClassRepo repo = App.Repos.Current;
+            ClassRepo repo = App.Repos != null ? App.Repos.Current : null;
             List<GraphRow> list = new List<GraphRow>();
             if (repo != null)
             {

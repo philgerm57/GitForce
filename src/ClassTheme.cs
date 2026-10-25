@@ -175,8 +175,21 @@ namespace GitForce
         /// </summary>
         public static void Apply(Form form)
         {
+            // Every window gets the application icon: some still have an older copy saved in their .resx
+            if (form.ShowIcon)
+                form.Icon = AppIcon;
             if (IsDark)
                 Walk(form);
+        }
+
+        private static Icon appIcon;
+
+        /// <summary>
+        /// The icon of the application, loaded once
+        /// </summary>
+        public static Icon AppIcon
+        {
+            get { return appIcon ?? (appIcon = Properties.Resources.git); }
         }
 
         private static void Walk(Control c)

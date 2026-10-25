@@ -51,6 +51,8 @@ namespace GitForce
                         {
                             PrintStatusMessage(String.Format("Refresh error in {0}: {1}",
                                 handler.Method.Name, ex.Message), MessageType.Error);
+                            // The full details go to the log window (and to the log file with --log)
+                            PrintLogMessage(ex.ToString(), MessageType.Error);
                         }
                     }
                 }

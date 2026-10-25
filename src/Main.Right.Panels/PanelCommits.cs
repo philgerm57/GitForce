@@ -31,7 +31,12 @@ namespace GitForce.Main.Right.Panels
         {
             InitializeComponent();
 
+            // Line icons of the toolbar and of the context menu
+            ClassIcons.Attach(contextMenu);
+
             treeCommits.ImageList = ClassView.GetImageList();
+            // Set once: changing this style later creates the control again and collapses its nodes
+            treeCommits.ShowNodeToolTips = true;
 
             App.Refresh += CommitsRefresh;
 
@@ -122,7 +127,6 @@ namespace GitForce.Main.Right.Panels
                         App.PrintStatusMessage(ex.Message, MessageType.Error);
                     }
             }
-            treeCommits.ShowNodeToolTips = true;
             treeCommits.EndUpdate();
         }
 
@@ -363,6 +367,12 @@ namespace GitForce.Main.Right.Panels
 
             ToolStripMenuItem mDiff = new ToolStripMenuItem("Diff vs Repo HEAD", null, MenuDiffClick, Keys.Control | Keys.Z) { Tag = tag };
             ToolStripMenuItem mRevHist = new ToolStripMenuItem("Revision History...", null, MenuEditRevHistClick) { };
+            ToolStripMenuItem mBlame = new ToolStripMenuItem("Blame", null, (s, e) =>
+            {
+                string file = GetSelectedFile();
+                if (file != string.Empty)
+                    FormBlame.ShowBlame(status.Repo, string.Empty, file.Replace('\\', '/'));
+            }) { ToolTipText = "Who last changed each line of the file (working copy)" };
 
             ToolStripMenuItem mSub = isMergeState
                                          ? new ToolStripMenuItem("Submit Merge...", null, MenuSubmitMergeClick, Keys.Control | Keys.S)
@@ -387,7 +397,7 @@ namespace GitForce.Main.Right.Panels
                 mAbort, mExitMerge });
 
             ToolStripItemCollection menu = new ToolStripItemCollection(owner, new ToolStripItem[] {
-                mEdit, mDiff, mRevHist,
+                mEdit, mDiff, mRevHist, mBlame,
                 new ToolStripSeparator(),
                 mSub,
                 new ToolStripSeparator(),
@@ -397,7 +407,7 @@ namespace GitForce.Main.Right.Panels
                 mResolve });
 
             if (GetSelectedFile() == string.Empty)
-                mEdit.Enabled = mRevHist.Enabled = false;
+                mEdit.Enabled = mRevHist.Enabled = mBlame.Enabled = false;
 
             if (GetSelectedFiles().Count == 0)
                 mDiff.Enabled = false;

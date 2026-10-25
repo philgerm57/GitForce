@@ -30,6 +30,8 @@ namespace GitForce.Main.Right.Panels
 
             // Load the Scroll icon for the flat/tree toggle button
             btFlatList.Image = new Icon(Properties.Resources.Scroll, 16, 16).ToBitmap();
+            ClassIcons.ApplyToolbar(toolStrip1, "btFlatList", "list");
+            ClassIcons.Attach(contextMenu);
 
             // Set initial checked state from setting
             btFlatList.Checked = UseFlatMode;

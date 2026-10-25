@@ -21,6 +21,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="git.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- BinaryFormatter was removed from the .NET 9+ runtime; this package restores it -->
     <PackageReference Include="System.Runtime.Serialization.Formatters" Version="10.0.0" />
   </ItemGroup>

@@ -43,6 +43,13 @@ namespace GitForce.Main.Left.Panels
             InitializeComponent();
 
             treeView.ImageList = ClassView.GetImageList();
+            // Set once, before the tree is filled: changing this style later makes Windows create
+            // the control again, which loses the expanded state of the nodes (the root showed collapsed)
+            treeView.ShowNodeToolTips = true;
+
+            // Line icons of the toolbar and of the context menu
+            ClassIcons.ApplyToolbar(toolStrip1, "dropViewMode", "eye", "btRefresh", "refresh", "btListView", "list");
+            ClassIcons.Attach(contextMenu);
 
             menuView6.Click += ViewSetByMenuItem;
             dropViewMode.DropDownItems.Insert(6, menuView6);
@@ -77,11 +84,17 @@ namespace GitForce.Main.Left.Panels
                 ViewRefresh();
             };
             btClearFilter.Click += (s, e) => textFilter.Text = string.Empty;
+            if (Properties.Settings.Default.ModernIcons)
+            {
+                btClearFilter.Name = "btClearFilter";
+                btClearFilter.DisplayStyle = ToolStripItemDisplayStyle.Image;
+                btClearFilter.Image = ClassIcons.Get("close", 16);
+            }
             toolStrip1.Items.Insert(toolStrip1.Items.IndexOf(viewLabel) + 1, textFilter);
             toolStrip1.Items.Insert(toolStrip1.Items.IndexOf(textFilter) + 1, btClearFilter);
 
             menuView7.Click += ViewSetByMenuItem;
-            menuView7.ToolTipText = "All the changed files, staged or not, and the new files, in one list with their full path";
+            menuView7.ToolTipText = "All the changed tracked files, staged or not, in one list with their full path";
             dropViewMode.DropDownItems.Insert(7, menuView7);
             menuShowIgnored.Checked = Properties.Settings.Default.ShowIgnoredFiles;
             menuShowIgnored.ToolTipText = "Show the files and folders ignored by .gitignore, marked with a red sign";
@@ -251,8 +264,9 @@ namespace GitForce.Main.Left.Panels
                         files = status.GetIgnored();
                         break;
 
-                    case 7:     // All the changed files, staged or not, and the new files, as a flat list
-                        files = status.GetFiles();
+                    case 7:     // All the changed tracked files, staged or not, as a flat list
+                        // (the untracked files are in the "Local Files Not in Repo" view)
+                        files = status.GetFiles().Where(s => status.Xcode(s) != '?').ToList();
                         break;
 
                     case 5:     // Git view local files not in .gitignore
@@ -351,7 +365,6 @@ namespace GitForce.Main.Left.Panels
                 else
                     ViewExpand(node);
             }
-            treeView.ShowNodeToolTips = true;
             treeView.EndUpdate();
         }
 
@@ -729,7 +742,22 @@ namespace GitForce.Main.Left.Panels
             ToolStripMenuItem mStage = new ToolStripMenuItem("Stage", null, MenuViewStageClick) { ToolTipText = "Add all changes of the selected files and folders to the index" };
             ToolStripMenuItem mUnstage = new ToolStripMenuItem("Unstage", null, MenuViewUnstageClick) { ToolTipText = "Remove all changes of the selected files and folders from the index" };
             ToolStripMenuItem mIgnore = new ToolStripMenuItem("Ignore (add to .gitignore)", null, MenuViewIgnoreClick) { ToolTipText = "Add the selected files, and folders with all of their content, to .gitignore" };
+            // Ignore every file with the extension of the selected files ("Ignore *.bak")
+            List<string> extensions = App.Repos.Current != null && status != null ? GetSelectedExtensions() : new List<string>();
+            string patterns = string.Join(", ", extensions.Take(3).Select(x => "*" + x)) + (extensions.Count > 3 ? ", ..." : string.Empty);
+            ToolStripMenuItem mIgnoreExt = new ToolStripMenuItem("Ignore " + patterns, null, (s, e) => IgnoreExtensions(extensions))
+                { ToolTipText = "Add " + patterns + " to .gitignore: all the files with " + (extensions.Count > 1 ? "these extensions" : "this extension") + ", in every folder",
+                  Visible = extensions.Count > 0 };
+            // Ignore the folder of the selected files (or the selected folders) with all of its content
+            List<string> folders = App.Repos.Current != null && status != null ? GetSelectedFolders() : new List<string>();
+            string folderText = folders.Count == 1 ? folders[0].Replace('\\', '/') + "/" : folders.Count + " folders";
+            ToolStripMenuItem mIgnoreFolder = new ToolStripMenuItem("Ignore folder " + folderText, null, (s, e) => IgnoreFolders(folders))
+                { ToolTipText = "Add " + string.Join(", ", folders.Take(5).Select(f => "/" + f.Replace('\\', '/') + "/")) + (folders.Count > 5 ? ", ..." : string.Empty) +
+                                " to .gitignore: the folder with all of its files and subfolders",
+                  Visible = folders.Count > 0 };
             ToolStripMenuItem mUnignore = new ToolStripMenuItem("Unignore (make untracked)", null, MenuViewUnignoreClick) { ToolTipText = "Stop ignoring the selected files and folders, so they show up as untracked" };
+            ToolStripMenuItem mUntrack = new ToolStripMenuItem("Untrack (keep on disk)...", null, MenuViewUntrackClick)
+                { ToolTipText = "Stop tracking the selected files and folders: they stay on the disk and show again as untracked (?)" };
             ToolStripMenuItem mStash = new ToolStripMenuItem("Stash Selected...", null, (s, e) =>
             {
                 if (FormStashSave.Stash(status.Repo, GetSelectedPaths()))
@@ -760,6 +788,12 @@ namespace GitForce.Main.Left.Panels
             }
 
             ToolStripMenuItem mRevHist = new ToolStripMenuItem("Revision History...", null, MenuViewRevHistClick) { ShortcutKeys = Keys.Control | Keys.H };
+            ToolStripMenuItem mBlame = new ToolStripMenuItem("Blame", null, (s, e) =>
+            {
+                Selection sel = new Selection(treeView, status);
+                if (sel.SelFiles.Length == 1)
+                    FormBlame.ShowBlame(status.Repo, string.Empty, sel.SelFiles[0].Replace('\\', '/'));
+            }) { ToolTipText = "Who last changed each line of the file (working copy)" };
             ToolStripMenuItem mRename = new ToolStripMenuItem("Move/Rename...", null, MenuViewRenameClick);
             ToolStripMenuItem mDelete = new ToolStripMenuItem("Open for Delete", null, MenuViewOpenForDeleteClick);
             ToolStripMenuItem mRemove = new ToolStripMenuItem("Remove from File System", null, MenuViewRemoveFromFsClick);
@@ -799,7 +833,10 @@ namespace GitForce.Main.Left.Panels
             List<ToolStripItem> menuItems = new List<ToolStripItem> {
                 mStage,
                 mUnstage,
+                mUntrack,
                 mIgnore,
+                mIgnoreExt,
+                mIgnoreFolder,
                 mUnignore,
                 mStash,
                 new ToolStripSeparator(),
@@ -808,6 +845,7 @@ namespace GitForce.Main.Left.Panels
                 mDiff,
                 mEdit,
                 mRevHist,
+                mBlame,
                 new ToolStripSeparator(),
                 mRename,
                 mDelete,
@@ -846,8 +884,8 @@ namespace GitForce.Main.Left.Panels
             // If there is no current repo, disable every remaining menu in this collection
             if (App.Repos.Current == null)
             {
-                mRevHist.Enabled = mExplore.Enabled = mCommand.Enabled = false;
-                mStage.Enabled = mUnstage.Enabled = mIgnore.Enabled = mUnignore.Enabled = mStash.Enabled = false;
+                mRevHist.Enabled = mBlame.Enabled = mExplore.Enabled = mCommand.Enabled = false;
+                mStage.Enabled = mUnstage.Enabled = mIgnore.Enabled = mUnignore.Enabled = mStash.Enabled = mUntrack.Enabled = false;
             }
             else
             {
@@ -857,9 +895,16 @@ namespace GitForce.Main.Left.Panels
 
                 // A bit of a hack, but revision history on a file is enabled when the edit on a file is enabled
                 mRevHist.Enabled = mEdit.Enabled;
+                // Blame needs a file that git knows (not a new or an ignored one)
+                Selection selBlame = new Selection(treeView, status);
+                mBlame.Enabled = mEdit.Enabled && selBlame.SelFiles.Length == 1 && !selBlame.Opclass.ContainsKey('?') && !selBlame.Opclass.ContainsKey('!');
 
                 // Stage and unstage work on any selection of files and folders
                 mStage.Enabled = mUnstage.Enabled = treeView.SelectedNodes.Count > 0;
+                // Untrack needs something that git tracks: not only new or ignored files
+                Selection selTracked = new Selection(treeView, status);
+                mUntrack.Enabled = GetSelectedPaths().Any(p => p != ".") &&
+                                   selTracked.Opclass.Keys.Any(k => k != '?' && k != '!');
                 mIgnore.Enabled = GetSelectedPaths().Any(p => p != ".");
                 mUnignore.Enabled = status != null && new Selection(treeView, status).Opclass.ContainsKey('!');
             }
@@ -955,6 +1000,136 @@ namespace GitForce.Main.Left.Panels
         /// Add selected files and folders to .gitignore. Files that git already tracks are not
         /// affected by .gitignore, so offer to stop tracking them (they stay on the disk).
         /// </summary>
+        /// <summary>
+        /// Extensions of the selected files (not folders), like ".bak". A name that only has a
+        /// leading dot (".gitignore") has no extension.
+        /// </summary>
+        private List<string> GetSelectedExtensions()
+        {
+            List<string> list = new List<string>();
+            foreach (string p in GetSelectedPaths())
+            {
+                if (p == "." || Directory.Exists(Path.Combine(App.Repos.Current.Path, p)))
+                    continue;
+                string name = Path.GetFileName(p);
+                string ext = Path.GetExtension(name);
+                if (ext.Length > 1 && Path.GetFileNameWithoutExtension(name).Length > 0 &&
+                    !list.Contains(ext, StringComparer.OrdinalIgnoreCase))
+                    list.Add(ext);
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// Stop tracking the selected files and folders (git rm --cached): they stay on the disk,
+        /// become untracked, and are removed from the repository with the next commit
+        /// </summary>
+        private void MenuViewUntrackClick(object sender, EventArgs e)
+        {
+            List<string> paths = GetSelectedPaths().Where(p => p != ".").ToList();
+            List<string> tracked = paths.Count > 0 ? status.Repo.GetTrackedFiles(paths) : new List<string>();
+            if (tracked.Count == 0)
+            {
+                MessageBox.Show("Git does not track any of the selected files.", "Untrack", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            string list = string.Join(Environment.NewLine, tracked.Take(15)) +
+                          (tracked.Count > 15 ? Environment.NewLine + "... (" + tracked.Count + " files)" : "");
+            if (MessageBox.Show("Stop tracking these files?" + Environment.NewLine + Environment.NewLine + list + Environment.NewLine + Environment.NewLine +
+                                "They stay on the disk and show again as untracked (?). Their removal from the repository " +
+                                "is staged and is recorded by the next commit." + Environment.NewLine +
+                                "(A file that matches a .gitignore rule shows as ignored instead.)",
+                                "Untrack", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
+            status.Repo.GitUntrack(paths);
+            App.DoRefresh();
+        }
+
+        /// <summary>
+        /// Folders of the selection: a selected folder itself, or the folder of a selected file.
+        /// The root of the repository can not be ignored.
+        /// </summary>
+        private List<string> GetSelectedFolders()
+        {
+            List<string> list = new List<string>();
+            foreach (string p in GetSelectedPaths())
+            {
+                if (p == ".")
+                    continue;
+                string folder = Directory.Exists(Path.Combine(App.Repos.Current.Path, p)) ? p : Path.GetDirectoryName(p);
+                folder = (folder ?? string.Empty).TrimEnd(Path.DirectorySeparatorChar);
+                if (folder.Length > 0 && !list.Contains(folder, StringComparer.OrdinalIgnoreCase))
+                    list.Add(folder);
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// Ignore whole folders. Files of these folders that git already tracks are not affected by
+        /// .gitignore, so offer to stop tracking them (they stay on the disk).
+        /// </summary>
+        private void IgnoreFolders(List<string> folders)
+        {
+            if (folders.Count == 0)
+                return;
+            try
+            {
+                List<string> added = status.Repo.GitIgnoreFolders(folders);
+                List<string> tracked = status.Repo.GetTrackedFiles(folders);
+                if (tracked.Count > 0)
+                {
+                    string list = string.Join(Environment.NewLine, tracked.Take(15)) +
+                                  (tracked.Count > 15 ? Environment.NewLine + "... (" + tracked.Count + " files)" : "");
+                    if (MessageBox.Show("These files are already tracked by git, so .gitignore does not apply to them:" +
+                                        Environment.NewLine + Environment.NewLine + list + Environment.NewLine + Environment.NewLine +
+                                        "Stop tracking them? They will be kept on the disk and removed from the repository with the next commit.",
+                                        "Ignore folder", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                        status.Repo.GitUntrack(folders);
+                }
+                else if (added.Count == 0)
+                    App.PrintStatusMessage("Already in .gitignore", MessageType.General);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error updating .gitignore", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            App.DoRefresh();
+        }
+
+        /// <summary>
+        /// Ignore all the files with the given extensions. Files that git already tracks are not
+        /// affected by .gitignore, so offer to stop tracking them (they stay on the disk).
+        /// </summary>
+        private void IgnoreExtensions(List<string> extensions)
+        {
+            if (extensions.Count == 0)
+                return;
+            try
+            {
+                List<string> added = status.Repo.GitIgnoreExtensions(extensions);
+                List<string> globs = extensions.Select(x => "*" + x).ToList();
+                // .gitignore ignores the case on Windows (core.ignorecase): look for the tracked files the same way
+                List<string> tracked = status.Repo.GetTrackedFiles(globs.Select(g => ":(icase)" + g).ToList());
+                if (tracked.Count > 0)
+                {
+                    string list = string.Join(Environment.NewLine, tracked.Take(15)) +
+                                  (tracked.Count > 15 ? Environment.NewLine + "... (" + tracked.Count + " files)" : "");
+                    if (MessageBox.Show("These files are already tracked by git, so .gitignore does not apply to them:" +
+                                        Environment.NewLine + Environment.NewLine + list + Environment.NewLine + Environment.NewLine +
+                                        "Stop tracking them? They will be kept on the disk and removed from the repository with the next commit.",
+                                        "Ignore " + string.Join(", ", globs), MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                        status.Repo.GitUntrack(tracked);
+                }
+                else if (added.Count == 0)
+                    App.PrintStatusMessage(string.Join(", ", globs) + ": already in .gitignore", MessageType.General);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error updating .gitignore", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            App.DoRefresh();
+        }
+
         private void MenuViewIgnoreClick(object sender, EventArgs e)
         {
             List<string> paths = GetSelectedPaths().Where(p => p != ".").ToList();

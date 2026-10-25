@@ -70,6 +70,20 @@ namespace GitForce.Properties {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("True")]
         [global::System.Configuration.SettingsManageabilityAttribute(global::System.Configuration.SettingsManageability.Roaming)]
+        public bool ModernIcons {
+            get {
+                return ((bool)(this["ModernIcons"]));
+            }
+            set {
+                this["ModernIcons"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Configuration.SettingsProviderAttribute(typeof(GitForce.PortableSettingsProvider))]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        [global::System.Configuration.SettingsManageabilityAttribute(global::System.Configuration.SettingsManageability.Roaming)]
         public bool AutoRefresh {
             get {
                 return ((bool)(this["AutoRefresh"]));
@@ -90,6 +104,20 @@ namespace GitForce.Properties {
             }
             set {
                 this["ToolbarIconSize"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Configuration.SettingsProviderAttribute(typeof(GitForce.PortableSettingsProvider))]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.SettingsManageabilityAttribute(global::System.Configuration.SettingsManageability.Roaming)]
+        public string GraphColumnWidths {
+            get {
+                return ((string)(this["GraphColumnWidths"]));
+            }
+            set {
+                this["GraphColumnWidths"] = value;
             }
         }
 

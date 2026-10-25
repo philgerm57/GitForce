@@ -23,6 +23,9 @@ namespace GitForce.Main.Right.Panels
         {
             InitializeComponent();
 
+            // Line icons of the toolbar and of the context menu
+            ClassIcons.Attach(contextMenu);
+
             // Branch names are drawn normally, followed by their tip commit in a dimmed color
             treeBranches.DrawMode = TreeViewDrawMode.OwnerDrawText;
             treeBranches.DrawNode += TreeBranchesDrawNode;

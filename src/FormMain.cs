@@ -160,6 +160,19 @@ namespace GitForce
             AddThemeMenu();
             AddRemoteMenu();
             InitAutoRefresh();
+            InitRepoBar();
+
+            // Icons of the menus: the entries get the icon that matches their text when the menu opens
+            foreach (ToolStripItem top in menuMain.Items)
+            {
+                ToolStripMenuItem menu = top as ToolStripMenuItem;
+                if (menu == null)
+                    continue;
+                menu.DropDownOpening += (s, e) => ClassIcons.DecorateMenu(menu.DropDownItems);
+                ClassIcons.DecorateMenu(menu.DropDownItems);
+            }
+            ClassIcons.Attach(commitFilesMenu);
+            ClassIcons.Attach(menuStatus);
             AddToolbarIconMenu();
             ApplyToolbarIconSize(Properties.Settings.Default.ToolbarIconSize);
 
@@ -585,6 +598,82 @@ namespace GitForce
         /// </summary>
         private readonly Dictionary<ToolStripItem, Image> toolbarImages = new Dictionary<ToolStripItem, Image>();
 
+        #region Bar of the current repository
+
+        // Under the toolbar: the repository in use, its folder, branch and remote, and the
+        // number of changed files, always in view (the top of the file tree scrolls away)
+        private readonly ToolStrip repoBar = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden, Dock = DockStyle.Top, Name = "repoBar" };
+        private readonly ToolStripLabel lblRepoName = new ToolStripLabel();
+        private readonly ToolStripLabel lblRepoPath = new ToolStripLabel { IsLink = true, LinkBehavior = LinkBehavior.HoverUnderline, ToolTipText = "Open the folder of the repository" };
+        private readonly ToolStripLabel lblRepoBranch = new ToolStripLabel { ToolTipText = "Current branch" };
+        private readonly ToolStripLabel lblRepoRemote = new ToolStripLabel { ToolTipText = "Current remote repository (Remote menu)" };
+        private readonly ToolStripLabel lblRepoChanges = new ToolStripLabel { Alignment = ToolStripItemAlignment.Right };
+
+        private static string RepoName(ClassRepo repo)
+        {
+            string path = repo.Path.TrimEnd(Path.DirectorySeparatorChar);
+            string name = Path.GetFileName(path);
+            return string.IsNullOrEmpty(name) ? path : name;
+        }
+
+        private void InitRepoBar()
+        {
+            lblRepoName.Font = new Font(repoBar.Font.FontFamily, repoBar.Font.Size + 1.5f, FontStyle.Bold);
+            foreach (ToolStripLabel l in new[] { lblRepoName, lblRepoBranch, lblRepoRemote })
+                l.ImageScaling = ToolStripItemImageScaling.None;
+            if (Properties.Settings.Default.ModernIcons)
+            {
+                lblRepoName.Image = ClassIcons.Get("btRepos", 16);
+                lblRepoBranch.Image = ClassIcons.Get("btBranches", 16);
+                lblRepoRemote.Image = ClassIcons.Get("globe", 16);
+            }
+            Color dim = ClassTheme.IsDark ? Color.FromArgb(160, 165, 172) : Color.FromArgb(105, 112, 122);
+            lblRepoPath.LinkColor = lblRepoPath.ActiveLinkColor = lblRepoPath.VisitedLinkColor = dim;
+            lblRepoChanges.ForeColor = dim;
+            lblRepoPath.Click += (s, e) =>
+            {
+                if (App.Repos.Current != null)
+                    ClassUtils.ExplorerHere(App.Repos.Current.Path, string.Empty);
+            };
+            lblRepoBranch.Click += (s, e) => ChangeRightPanel("Branches");
+            lblRepoRemote.Click += (s, e) => { if (App.Repos.Current != null) MenuEditRemoteRepos(this, EventArgs.Empty); };
+            repoBar.Items.AddRange(new ToolStripItem[] {
+                lblRepoName, lblRepoPath, new ToolStripSeparator(), lblRepoBranch, lblRepoRemote, lblRepoChanges });
+
+            // Dock it under the toolbar: the controls are docked from the end of the collection
+            Controls.Add(repoBar);
+            Controls.SetChildIndex(repoBar, Controls.GetChildIndex(splitContainer1) + 1);
+            UpdateRepoBar();
+        }
+
+        private void UpdateRepoBar()
+        {
+            ClassRepo repo = App.Repos != null ? App.Repos.Current : null;
+            repoBar.SuspendLayout();
+            foreach (ToolStripItem item in repoBar.Items)
+                item.Visible = repo != null || item == lblRepoName;
+            if (repo == null)
+            {
+                lblRepoName.Text = "No repository: open or create one in the Repos tab";
+                lblRepoName.ForeColor = lblRepoChanges.ForeColor;
+            }
+            else
+            {
+                lblRepoName.Text = RepoName(repo);
+                lblRepoName.ForeColor = repoBar.ForeColor;
+                lblRepoName.ToolTipText = repo.Path;
+                lblRepoPath.Text = repo.Path;
+                lblRepoBranch.Text = string.IsNullOrEmpty(repo.Branches.Current) ? "(no branch)" : repo.Branches.Current;
+                lblRepoRemote.Text = repo.Remotes.Current;
+                lblRepoRemote.Visible = !string.IsNullOrEmpty(repo.Remotes.Current);
+                int changed = repo.Status != null ? repo.Status.GetFiles().Count : 0;
+                lblRepoChanges.Text = changed == 0 ? "No changes" : changed + " changed file" + (changed > 1 ? "s" : "");
+            }
+            repoBar.ResumeLayout();
+        }
+
+        #endregion
+
         #region Automatic refresh when files change
 
         private FileSystemWatcher workTreeWatcher;
@@ -822,10 +911,22 @@ namespace GitForce
                     ApplyToolbarIconSize(px);
                 }) { Tag = px });
             }
+            ToolStripMenuItem mModern = new ToolStripMenuItem("Modern style", null, (s, e) =>
+            {
+                Properties.Settings.Default.ModernIcons = !Properties.Settings.Default.ModernIcons;
+                ApplyToolbarIconSize(Properties.Settings.Default.ToolbarIconSize);
+            }) { ToolTipText = "Line icons drawn for the light and dark themes, or the original icons of GitForce" };
+            mIcons.DropDownItems.Add(new ToolStripSeparator());
+            mIcons.DropDownItems.Add(mModern);
             mIcons.DropDownOpening += (s, e) =>
             {
-                foreach (ToolStripMenuItem m in mIcons.DropDownItems)
-                    m.Checked = (int)m.Tag == Properties.Settings.Default.ToolbarIconSize;
+                foreach (ToolStripItem item in mIcons.DropDownItems)
+                {
+                    ToolStripMenuItem m = item as ToolStripMenuItem;
+                    if (m != null && m.Tag is int)
+                        m.Checked = (int)m.Tag == Properties.Settings.Default.ToolbarIconSize;
+                }
+                mModern.Checked = Properties.Settings.Default.ModernIcons;
             };
             menuMainView.DropDownItems.Add(mIcons);
         }
@@ -854,8 +955,16 @@ namespace GitForce
                     toolbarImages[item] = original;
                 }
                 Image source = toolbarImages[item];
+                Bitmap scaled;
+                if (Properties.Settings.Default.ModernIcons && ClassIcons.Has(item.Name))
+                {
+                    // Line icons drawn at the size, in the colors of the theme
+                    scaled = ClassIcons.Render(item.Name, size);
+                    SetToolbarImage(item, scaled, source);
+                    continue;
+                }
                 int w = Math.Max(1, (int)Math.Round(source.Width * factor)), h = Math.Max(1, (int)Math.Round(source.Height * factor));
-                Bitmap scaled = new Bitmap(w, h);
+                scaled = new Bitmap(w, h);
                 using (Graphics g = Graphics.FromImage(scaled))
                 {
                     g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
@@ -867,16 +976,21 @@ namespace GitForce
                         g.DrawImage(source, new Rectangle(0, 0, w, h), 0, 0, source.Width, source.Height, GraphicsUnit.Pixel, attr);
                     }
                 }
-                Image old = item.Image;
-                item.ImageTransparentColor = Color.Empty;
-                item.ImageScaling = ToolStripItemImageScaling.None;
-                item.Image = scaled;
-                item.AutoSize = true;
-                if (old != null && !ReferenceEquals(old, source) && !toolbarImages.ContainsValue(old))
-                    old.Dispose();
+                SetToolbarImage(item, scaled, source);
             }
             toolStrip.ResumeLayout();
             toolStrip.PerformLayout();
+        }
+
+        private void SetToolbarImage(ToolStripItem item, Image image, Image source)
+        {
+            Image old = item.Image;
+            item.ImageTransparentColor = Color.Empty;
+            item.ImageScaling = ToolStripItemImageScaling.None;
+            item.Image = image;
+            item.AutoSize = true;
+            if (old != null && !ReferenceEquals(old, source) && !toolbarImages.ContainsValue(old))
+                old.Dispose();
         }
 
         /// <summary>
@@ -1532,13 +1646,16 @@ namespace GitForce
             {
                 menuMainStash.Enabled = menuMainUnstash.Enabled = true;
 
-                title.Append("- " + App.Repos.Current.Branches.Current);
+                // The name of the repository first: it is what tells the windows apart in the taskbar
+                title.Append("- " + RepoName(App.Repos.Current) + "  (" + App.Repos.Current.Branches.Current);
 
                 if (App.Repos.Current.Remotes.Current != "")
                     title.Append(" : " + App.Repos.Current.Remotes.Current);
+                title.Append(")");
             }
 
             Text = title.ToString();
+            UpdateRepoBar();
 
             // Build the menu with the list of remote repos
             menuMainPushToRemote.Enabled = menuMainPullFromRemote.Enabled = menuMainFetchFromRemote.Enabled =

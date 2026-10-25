@@ -310,6 +310,60 @@ namespace GitForce
         /// <summary>
         /// Append lines to the .gitignore file at the root of the repository
         /// </summary>
+        /// <summary>
+        /// Ignore whole folders with all of their content: add "/folder/" to the .gitignore file at
+        /// the root. Returns the patterns that were added.
+        /// </summary>
+        public List<string> GitIgnoreFolders(List<string> folders)
+        {
+            string ignoreFile = System.IO.Path.Combine(Root, ".gitignore");
+            List<string> existing = File.Exists(ignoreFile)
+                ? File.ReadAllLines(ignoreFile).Select(s => s.Trim()).ToList()
+                : new List<string>();
+            List<string> added = new List<string>();
+            foreach (string folder in folders)
+            {
+                string rel = folder.Replace('\\', '/').Trim('/');
+                if (rel.Length == 0 || rel == ".")
+                    continue;
+                string pattern = "/" + EscapeIgnorePattern(rel) + "/";
+                // The same folder may already be ignored with "/folder/*" by the Ignore command
+                if (!existing.Contains(pattern) && !existing.Contains(pattern + "*") && !added.Contains(pattern))
+                    added.Add(pattern);
+            }
+            if (added.Count > 0)
+            {
+                AppendToGitignore(added);
+                App.PrintStatusMessage("Added to .gitignore: " + string.Join(" ", added), MessageType.General);
+            }
+            return added;
+        }
+
+        /// <summary>
+        /// Ignore all the files with the given extensions (".bak"), in every folder: add "*.bak"
+        /// to the .gitignore file at the root. Returns the patterns that were added.
+        /// </summary>
+        public List<string> GitIgnoreExtensions(List<string> extensions)
+        {
+            string ignoreFile = System.IO.Path.Combine(Root, ".gitignore");
+            List<string> existing = File.Exists(ignoreFile)
+                ? File.ReadAllLines(ignoreFile).Select(s => s.Trim()).ToList()
+                : new List<string>();
+            List<string> added = new List<string>();
+            foreach (string ext in extensions)
+            {
+                string pattern = "*" + EscapeIgnorePattern(ext.StartsWith(".") ? ext : "." + ext);
+                if (!existing.Contains(pattern) && !added.Contains(pattern))
+                    added.Add(pattern);
+            }
+            if (added.Count > 0)
+            {
+                AppendToGitignore(added);
+                App.PrintStatusMessage("Added to .gitignore: " + string.Join(" ", added), MessageType.General);
+            }
+            return added;
+        }
+
         private void AppendToGitignore(List<string> lines)
         {
             string ignoreFile = System.IO.Path.Combine(Root, ".gitignore");
@@ -632,9 +686,39 @@ namespace GitForce
         /// </summary>
         public bool GitCommit(string cmd, bool isAmend, List<string> files)
         {
-            ExecResult result;
             string list = QuoteAndFlattenPaths(files);
             App.PrintStatusMessage("Submit " + list, MessageType.General);
+
+            // A commit of given paths takes their content from the disk: an untracked file whose
+            // removal is staged (untrack) would be added back. Move such files away during the commit.
+            List<KeyValuePair<string, string>> moved = new List<KeyValuePair<string, string>>();
+            try
+            {
+                foreach (string file in files)
+                {
+                    string full = System.IO.Path.Combine(Root, file);
+                    if (Status != null && Status.Xcode(file) == 'D' && File.Exists(full))
+                    {
+                        string aside = full + ".gitforce-" + Guid.NewGuid().ToString("N").Substring(0, 8);
+                        File.Move(full, aside);
+                        moved.Add(new KeyValuePair<string, string>(full, aside));
+                    }
+                }
+                return GitCommitFiles(cmd, isAmend, files, list);
+            }
+            finally
+            {
+                foreach (var m in moved)
+                {
+                    try { File.Move(m.Value, m.Key); }
+                    catch (Exception ex) { App.PrintStatusMessage("Unable to restore " + m.Key + " (saved as " + m.Value + "): " + ex.Message, MessageType.Error); }
+                }
+            }
+        }
+
+        private bool GitCommitFiles(string cmd, bool isAmend, List<string> files, string list)
+        {
+            ExecResult result;
 
             // See below Run() for the description of the problem with long commands.
             // The Run() function breaks any command into chunks of 2000 characters or less

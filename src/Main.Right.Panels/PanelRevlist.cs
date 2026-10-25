@@ -24,6 +24,10 @@ namespace GitForce.Main.Right.Panels
         {
             InitializeComponent();
 
+            // Line icons of the toolbar and of the context menu
+            ClassIcons.ApplyToolbar(toolStrip1, "btBranch", "btBranches", "btSetFilter", "filter", "btClearFilter", "filterx", "btRefresh", "refresh");
+            ClassIcons.Attach(contextMenu);
+
             App.Refresh += RevlistRefresh;
 
             // A click on a commit lists its files at the right of the log
@@ -31,6 +35,13 @@ namespace GitForce.Main.Right.Panels
             {
                 string sha = GetSelectedSha();
                 if (sha != null && listRev.Focused && App.MainForm != null)
+                    App.MainForm.ShowCommitFiles(sha);
+            };
+            // Also on a click on the commit that is already selected
+            listRev.MouseClick += (s, e) =>
+            {
+                string sha = GetSelectedSha();
+                if (sha != null && App.MainForm != null)
                     App.MainForm.ShowCommitFiles(sha);
             };
         }

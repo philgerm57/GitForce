@@ -35,7 +35,7 @@ namespace GitForce
         private FormBlame(ClassRepo repo, string rev, string path)
         {
             this.repo = repo;
-            Text = "Blame: " + path + " @ " + (rev.Length > 10 ? rev.Substring(0, 7) : rev);
+            Text = "Blame: " + path + (rev.Length == 0 ? "  (working copy)" : " @ " + (rev.Length > 10 ? rev.Substring(0, 7) : rev));
             Icon = Properties.Resources.git;
             StartPosition = FormStartPosition.CenterScreen;
             Size = new Size(1150, 750);
@@ -74,8 +74,8 @@ namespace GitForce
             };
             grid.CellDoubleClick += (s, e) =>
             {
-                if (e.RowIndex < 0 || e.RowIndex >= lines.Count)
-                    return;
+                if (e.RowIndex < 0 || e.RowIndex >= lines.Count || lines[e.RowIndex].Sha.Trim('0').Length == 0)
+                    return;     // A line that is not committed yet has no commit to show
                 using (FormShowChangelist form = new FormShowChangelist())
                 {
                     form.LoadChangelist(lines[e.RowIndex].Sha);
@@ -193,7 +193,7 @@ namespace GitForce
             Line l = lines[e.RowIndex];
             switch (e.ColumnIndex)
             {
-                case 0: e.Value = l.FirstOfGroup ? l.Sha.Substring(0, 7) : string.Empty; break;
+                case 0: e.Value = l.FirstOfGroup ? (l.Sha.Trim('0').Length == 0 ? "(local)" : l.Sha.Substring(0, 7)) : string.Empty; break;
                 case 1: e.Value = l.FirstOfGroup ? l.Author : string.Empty; break;
                 case 2: e.Value = l.FirstOfGroup ? l.Date.ToString("d", CultureInfo.CurrentCulture) : string.Empty; break;
                 case 3: e.Value = l.Number.ToString(); break;

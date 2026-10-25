@@ -19,6 +19,23 @@ namespace GitForce
     public class TreeViewEx : TreeView
     {
         /// <summary>
+        /// Raised when the selection changes, also when it becomes empty (with no node).
+        /// The selection of this control is its own (several nodes), and it tells its users with
+        /// OnAfterSelect(null) when it was cleared. Since .NET 5, TreeView.OnAfterSelect needs a
+        /// node (it uses it for accessibility) and throws without one: the users subscribe to this
+        /// event instead, and the base only gets the calls that have a node.
+        /// </summary>
+        public new event TreeViewEventHandler AfterSelect;
+
+        protected override void OnAfterSelect(TreeViewEventArgs e)
+        {
+            if (e != null && e.Node != null)
+                base.OnAfterSelect(e);
+            if (AfterSelect != null)
+                AfterSelect(this, e ?? new TreeViewEventArgs(null));
+        }
+
+        /// <summary>
         /// Mask flickering on TreeView:
         /// http://stackoverflow.com/questions/10362988/treeview-flickering
         /// </summary>

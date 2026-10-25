@@ -60,7 +60,13 @@ namespace GitForce
             {
                 string s = response[i].Substring(3);
                 string code = response[i].Substring(0, 2);
-                XY[s] = code;
+                // A file can be listed twice: its removal staged ("D ", after an untrack) and the
+                // file itself untracked ("??"). Keep both: "D?" is in Pending Changelists as
+                // deleted, and shows with a question mark in the tree.
+                if (code == "??" && XY.ContainsKey(s) && XY[s][0] != '?')
+                    XY[s] = XY[s][0] + "?";
+                else
+                    XY[s] = code;
                 if ("RC".Contains(response[i][0]))
                 {
                     i++;

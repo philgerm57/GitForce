@@ -11,8 +11,17 @@
     <Setting Name="ShowDotGitFolders" Provider="GitForce.PortableSettingsProvider" Roaming="true" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="ModernIcons" Provider="GitForce.PortableSettingsProvider" Roaming="true" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="AutoRefresh" Provider="GitForce.PortableSettingsProvider" Roaming="true" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
     <Setting Name="ToolbarIconSize" Provider="GitForce.PortableSettingsProvider" Roaming="true" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">24</Value>
+    </Setting>
+    <Setting Name="GraphColumnWidths" Provider="GitForce.PortableSettingsProvider" Roaming="true" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
     </Setting>
     <Setting Name="MainLayout" Provider="GitForce.PortableSettingsProvider" Roaming="true" Type="System.String" Scope="User">
       <Value Profile="(Default)" />

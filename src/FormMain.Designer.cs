@@ -28,922 +28,867 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
-            this.menuMain = new System.Windows.Forms.MenuStrip();
-            this.menuMainFile = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainEdit = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainSelectAll = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
-            this.menuMainStash = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainUnstash = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainView = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainPendingChanges = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainSubmittedChanges = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainBranches = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainRepos = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
-            this.menuView0 = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuView1 = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuView2 = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuView3 = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuView4 = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuView5 = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
-            this.menuMainRefresh = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuViewLogWindow = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuViewCommandLine = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainSettings = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainOptions = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainManageKeys = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainManageHttps = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
-            this.menuMainSwitchRemoteRepo = new System.Windows.Forms.ToolStripMenuItem();
-            this.xToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainEditRemoteRepo = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainFetchFromRemote = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainPullFromRemote = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainPushToRemote = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainChangelist = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainBranch = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainRepository = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainTools = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuMainHelp = new System.Windows.Forms.ToolStripMenuItem();
-            this.homeMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.gettingStartedMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.checkForUpdatesMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
-            this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.statusInfoLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.statusStrip = new System.Windows.Forms.StatusStrip();
-            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.splitContainer2 = new System.Windows.Forms.SplitContainer();
-            this.rightTabControl = new GitForce.TabEx();
-            this.listStatus = new GitForce.ListBoxEx();
-            this.menuStatus = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.menuStatusCopy = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuStatusSelectAll = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-            this.menuStatusClear = new System.Windows.Forms.ToolStripMenuItem();
-            this.cmdBox = new GitForce.TextBoxEx();
-            this.toolStrip = new System.Windows.Forms.ToolStrip();
-            this.btAdd = new System.Windows.Forms.ToolStripButton();
-            this.btUpdate = new System.Windows.Forms.ToolStripButton();
-            this.btUpdateAll = new System.Windows.Forms.ToolStripButton();
-            this.btRevert = new System.Windows.Forms.ToolStripButton();
-            this.btDelete = new System.Windows.Forms.ToolStripButton();
-            this.btDeleteFs = new System.Windows.Forms.ToolStripButton();
-            this.btEdit = new System.Windows.Forms.ToolStripButton();
-            this.toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
-            this.btPull = new System.Windows.Forms.ToolStripButton();
-            this.btPush = new System.Windows.Forms.ToolStripButton();
-            this.toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
-            this.btChangelists = new System.Windows.Forms.ToolStripButton();
-            this.btSubmitted = new System.Windows.Forms.ToolStripButton();
-            this.btBranches = new System.Windows.Forms.ToolStripButton();
-            this.btRepos = new System.Windows.Forms.ToolStripButton();
-            this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
-            this.btCancelOperation = new System.Windows.Forms.ToolStripButton();
-            this.btOptions = new System.Windows.Forms.ToolStripButton();
-            this.btSsh = new System.Windows.Forms.ToolStripButton();
-            this.btNewVersion = new System.Windows.Forms.ToolStripButton();
-            this.btHttps = new System.Windows.Forms.ToolStripButton();
-            this.timerBusy = new System.Windows.Forms.Timer(this.components);
-            this.loadWk = new System.Windows.Forms.OpenFileDialog();
-            this.saveWk = new System.Windows.Forms.SaveFileDialog();
-            this.openTools = new System.Windows.Forms.OpenFileDialog();
-            this.saveTools = new System.Windows.Forms.SaveFileDialog();
-            this.createWk = new System.Windows.Forms.SaveFileDialog();
-            this.importWk = new System.Windows.Forms.OpenFileDialog();
-            this.menuMain.SuspendLayout();
-            this.statusStrip.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
-            this.splitContainer1.Panel1.SuspendLayout();
-            this.splitContainer1.Panel2.SuspendLayout();
-            this.splitContainer1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).BeginInit();
-            this.splitContainer2.Panel2.SuspendLayout();
-            this.splitContainer2.SuspendLayout();
-            this.menuStatus.SuspendLayout();
-            this.toolStrip.SuspendLayout();
-            this.SuspendLayout();
-            //
+            menuMain = new System.Windows.Forms.MenuStrip();
+            menuMainFile = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainEdit = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainSelectAll = new System.Windows.Forms.ToolStripMenuItem();
+            toolStripSeparator9 = new System.Windows.Forms.ToolStripSeparator();
+            menuMainStash = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainUnstash = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainView = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainPendingChanges = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainSubmittedChanges = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainBranches = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainRepos = new System.Windows.Forms.ToolStripMenuItem();
+            toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            menuView0 = new System.Windows.Forms.ToolStripMenuItem();
+            menuView1 = new System.Windows.Forms.ToolStripMenuItem();
+            menuView2 = new System.Windows.Forms.ToolStripMenuItem();
+            menuView3 = new System.Windows.Forms.ToolStripMenuItem();
+            menuView4 = new System.Windows.Forms.ToolStripMenuItem();
+            menuView5 = new System.Windows.Forms.ToolStripMenuItem();
+            toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
+            menuMainRefresh = new System.Windows.Forms.ToolStripMenuItem();
+            menuViewLogWindow = new System.Windows.Forms.ToolStripMenuItem();
+            menuViewCommandLine = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainSettings = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainOptions = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainManageKeys = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainManageHttps = new System.Windows.Forms.ToolStripMenuItem();
+            toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
+            menuMainSwitchRemoteRepo = new System.Windows.Forms.ToolStripMenuItem();
+            xToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainEditRemoteRepo = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainFetchFromRemote = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainPullFromRemote = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainPushToRemote = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainChangelist = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainBranch = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainRepository = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainTools = new System.Windows.Forms.ToolStripMenuItem();
+            menuMainHelp = new System.Windows.Forms.ToolStripMenuItem();
+            homeMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            gettingStartedMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            checkForUpdatesMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            toolStripSeparator6 = new System.Windows.Forms.ToolStripSeparator();
+            aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            statusInfoLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            statusStrip = new System.Windows.Forms.StatusStrip();
+            splitContainer1 = new System.Windows.Forms.SplitContainer();
+            splitContainer2 = new System.Windows.Forms.SplitContainer();
+            rightTabControl = new TabEx();
+            listStatus = new ListBoxEx();
+            menuStatus = new System.Windows.Forms.ContextMenuStrip(components);
+            menuStatusCopy = new System.Windows.Forms.ToolStripMenuItem();
+            menuStatusSelectAll = new System.Windows.Forms.ToolStripMenuItem();
+            toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            menuStatusClear = new System.Windows.Forms.ToolStripMenuItem();
+            cmdBox = new TextBoxEx();
+            toolStrip = new System.Windows.Forms.ToolStrip();
+            btAdd = new System.Windows.Forms.ToolStripButton();
+            btUpdate = new System.Windows.Forms.ToolStripButton();
+            btUpdateAll = new System.Windows.Forms.ToolStripButton();
+            btRevert = new System.Windows.Forms.ToolStripButton();
+            btDelete = new System.Windows.Forms.ToolStripButton();
+            btDeleteFs = new System.Windows.Forms.ToolStripButton();
+            btEdit = new System.Windows.Forms.ToolStripButton();
+            toolStripSeparator8 = new System.Windows.Forms.ToolStripSeparator();
+            btPull = new System.Windows.Forms.ToolStripButton();
+            btPush = new System.Windows.Forms.ToolStripButton();
+            toolStripSeparator7 = new System.Windows.Forms.ToolStripSeparator();
+            btChangelists = new System.Windows.Forms.ToolStripButton();
+            btSubmitted = new System.Windows.Forms.ToolStripButton();
+            btBranches = new System.Windows.Forms.ToolStripButton();
+            btRepos = new System.Windows.Forms.ToolStripButton();
+            toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
+            btCancelOperation = new System.Windows.Forms.ToolStripButton();
+            btOptions = new System.Windows.Forms.ToolStripButton();
+            btSsh = new System.Windows.Forms.ToolStripButton();
+            btNewVersion = new System.Windows.Forms.ToolStripButton();
+            btHttps = new System.Windows.Forms.ToolStripButton();
+            timerBusy = new System.Windows.Forms.Timer(components);
+            loadWk = new System.Windows.Forms.OpenFileDialog();
+            saveWk = new System.Windows.Forms.SaveFileDialog();
+            openTools = new System.Windows.Forms.OpenFileDialog();
+            saveTools = new System.Windows.Forms.SaveFileDialog();
+            createWk = new System.Windows.Forms.SaveFileDialog();
+            importWk = new System.Windows.Forms.OpenFileDialog();
+            menuMain.SuspendLayout();
+            statusStrip.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
+            splitContainer1.Panel1.SuspendLayout();
+            splitContainer1.Panel2.SuspendLayout();
+            splitContainer1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainer2).BeginInit();
+            splitContainer2.Panel2.SuspendLayout();
+            splitContainer2.SuspendLayout();
+            menuStatus.SuspendLayout();
+            toolStrip.SuspendLayout();
+            SuspendLayout();
+            // 
             // menuMain
-            //
-            this.menuMain.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuMainFile,
-            this.menuMainEdit,
-            this.menuMainView,
-            this.menuMainSettings,
-            this.menuMainChangelist,
-            this.menuMainBranch,
-            this.menuMainRepository,
-            this.menuMainTools,
-            this.menuMainHelp});
-            this.menuMain.Location = new System.Drawing.Point(0, 0);
-            this.menuMain.Name = "menuMain";
-            this.menuMain.Size = new System.Drawing.Size(784, 24);
-            this.menuMain.TabIndex = 0;
-            this.menuMain.Text = "menuStrip1";
-            //
+            // 
+            menuMain.ImageScalingSize = new System.Drawing.Size(20, 20);
+            menuMain.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { menuMainFile, menuMainEdit, menuMainView, menuMainSettings, menuMainChangelist, menuMainBranch, menuMainRepository, menuMainTools, menuMainHelp });
+            menuMain.Location = new System.Drawing.Point(0, 0);
+            menuMain.Name = "menuMain";
+            menuMain.Padding = new System.Windows.Forms.Padding(8, 3, 0, 3);
+            menuMain.Size = new System.Drawing.Size(1045, 30);
+            menuMain.TabIndex = 0;
+            menuMain.Text = "menuStrip1";
+            // 
             // menuMainFile
-            //
-            this.menuMainFile.Name = "menuMainFile";
-            this.menuMainFile.Size = new System.Drawing.Size(37, 20);
-            this.menuMainFile.Text = "File";
-            this.menuMainFile.DropDownOpening += new System.EventHandler(this.MenuMainFileDropDownOpening);
-            //
+            // 
+            menuMainFile.Name = "menuMainFile";
+            menuMainFile.Size = new System.Drawing.Size(46, 24);
+            menuMainFile.Text = "File";
+            menuMainFile.DropDownOpening += MenuMainFileDropDownOpening;
+            // 
             // menuMainEdit
-            //
-            this.menuMainEdit.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuMainSelectAll,
-            this.toolStripSeparator9,
-            this.menuMainStash,
-            this.menuMainUnstash});
-            this.menuMainEdit.Name = "menuMainEdit";
-            this.menuMainEdit.Size = new System.Drawing.Size(39, 20);
-            this.menuMainEdit.Text = "Edit";
-            //
+            // 
+            menuMainEdit.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { menuMainSelectAll, toolStripSeparator9, menuMainStash, menuMainUnstash });
+            menuMainEdit.Name = "menuMainEdit";
+            menuMainEdit.Size = new System.Drawing.Size(49, 24);
+            menuMainEdit.Text = "Edit";
+            // 
             // menuMainSelectAll
-            //
-            this.menuMainSelectAll.Name = "menuMainSelectAll";
-            this.menuMainSelectAll.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.A)));
-            this.menuMainSelectAll.Size = new System.Drawing.Size(164, 22);
-            this.menuMainSelectAll.Text = "Select All";
-            this.menuMainSelectAll.Click += new System.EventHandler(this.MenuMainSelectAllClick);
-            //
+            // 
+            menuMainSelectAll.Name = "menuMainSelectAll";
+            menuMainSelectAll.ShortcutKeys = System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.A;
+            menuMainSelectAll.Size = new System.Drawing.Size(206, 26);
+            menuMainSelectAll.Text = "Select All";
+            menuMainSelectAll.Click += MenuMainSelectAllClick;
+            // 
             // toolStripSeparator9
-            //
-            this.toolStripSeparator9.Name = "toolStripSeparator9";
-            this.toolStripSeparator9.Size = new System.Drawing.Size(161, 6);
-            //
+            // 
+            toolStripSeparator9.Name = "toolStripSeparator9";
+            toolStripSeparator9.Size = new System.Drawing.Size(203, 6);
+            // 
             // menuMainStash
-            //
-            this.menuMainStash.Enabled = false;
-            this.menuMainStash.Name = "menuMainStash";
-            this.menuMainStash.Size = new System.Drawing.Size(164, 22);
-            this.menuMainStash.Text = "Stash";
-            this.menuMainStash.Click += new System.EventHandler(this.MenuMainStashClick);
-            //
+            // 
+            menuMainStash.Enabled = false;
+            menuMainStash.Name = "menuMainStash";
+            menuMainStash.Size = new System.Drawing.Size(206, 26);
+            menuMainStash.Text = "Stash";
+            menuMainStash.Click += MenuMainStashClick;
+            // 
             // menuMainUnstash
-            //
-            this.menuMainUnstash.Enabled = false;
-            this.menuMainUnstash.Name = "menuMainUnstash";
-            this.menuMainUnstash.Size = new System.Drawing.Size(164, 22);
-            this.menuMainUnstash.Text = "Unstash";
-            this.menuMainUnstash.Click += new System.EventHandler(this.MenuMainUnstashClick);
-            //
+            // 
+            menuMainUnstash.Enabled = false;
+            menuMainUnstash.Name = "menuMainUnstash";
+            menuMainUnstash.Size = new System.Drawing.Size(206, 26);
+            menuMainUnstash.Text = "Unstash";
+            menuMainUnstash.Click += MenuMainUnstashClick;
+            // 
             // menuMainView
-            //
-            this.menuMainView.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuMainPendingChanges,
-            this.menuMainSubmittedChanges,
-            this.menuMainBranches,
-            this.menuMainRepos,
-            this.toolStripSeparator3,
-            this.menuView0,
-            this.menuView1,
-            this.menuView2,
-            this.menuView3,
-            this.menuView4,
-            this.menuView5,
-            this.toolStripSeparator4,
-            this.menuMainRefresh,
-            this.menuViewLogWindow,
-            this.menuViewCommandLine});
-            this.menuMainView.Name = "menuMainView";
-            this.menuMainView.Size = new System.Drawing.Size(44, 20);
-            this.menuMainView.Text = "View";
-            this.menuMainView.DropDownOpened += new System.EventHandler(this.MenuMainViewDropDownOpened);
-            //
+            // 
+            menuMainView.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { menuMainPendingChanges, menuMainSubmittedChanges, menuMainBranches, menuMainRepos, toolStripSeparator3, menuView0, menuView1, menuView2, menuView3, menuView4, menuView5, toolStripSeparator4, menuMainRefresh, menuViewLogWindow, menuViewCommandLine });
+            menuMainView.Name = "menuMainView";
+            menuMainView.Size = new System.Drawing.Size(55, 24);
+            menuMainView.Text = "View";
+            menuMainView.DropDownOpened += MenuMainViewDropDownOpened;
+            // 
             // menuMainPendingChanges
-            //
-            this.menuMainPendingChanges.Name = "menuMainPendingChanges";
-            this.menuMainPendingChanges.ShortcutKeys = System.Windows.Forms.Keys.F6;
-            this.menuMainPendingChanges.Size = new System.Drawing.Size(230, 22);
-            this.menuMainPendingChanges.Tag = "Commits";
-            this.menuMainPendingChanges.Text = "Pending Changelists";
-            this.menuMainPendingChanges.Click += new System.EventHandler(this.RightPanelSelectionEvent);
-            //
+            // 
+            menuMainPendingChanges.Name = "menuMainPendingChanges";
+            menuMainPendingChanges.ShortcutKeys = System.Windows.Forms.Keys.F6;
+            menuMainPendingChanges.Size = new System.Drawing.Size(319, 26);
+            menuMainPendingChanges.Tag = "Commits";
+            menuMainPendingChanges.Text = "Pending Changelists";
+            menuMainPendingChanges.Click += RightPanelSelectionEvent;
+            // 
             // menuMainSubmittedChanges
-            //
-            this.menuMainSubmittedChanges.Name = "menuMainSubmittedChanges";
-            this.menuMainSubmittedChanges.ShortcutKeys = System.Windows.Forms.Keys.F7;
-            this.menuMainSubmittedChanges.Size = new System.Drawing.Size(230, 22);
-            this.menuMainSubmittedChanges.Tag = "Revisions";
-            this.menuMainSubmittedChanges.Text = "Submitted Changelists";
-            this.menuMainSubmittedChanges.Click += new System.EventHandler(this.RightPanelSelectionEvent);
-            //
+            // 
+            menuMainSubmittedChanges.Name = "menuMainSubmittedChanges";
+            menuMainSubmittedChanges.ShortcutKeys = System.Windows.Forms.Keys.F7;
+            menuMainSubmittedChanges.Size = new System.Drawing.Size(319, 26);
+            menuMainSubmittedChanges.Tag = "Revisions";
+            menuMainSubmittedChanges.Text = "Submitted Changelists";
+            menuMainSubmittedChanges.Click += RightPanelSelectionEvent;
+            // 
             // menuMainBranches
-            //
-            this.menuMainBranches.Name = "menuMainBranches";
-            this.menuMainBranches.ShortcutKeys = System.Windows.Forms.Keys.F8;
-            this.menuMainBranches.Size = new System.Drawing.Size(230, 22);
-            this.menuMainBranches.Tag = "Branches";
-            this.menuMainBranches.Text = "Branches";
-            this.menuMainBranches.Click += new System.EventHandler(this.RightPanelSelectionEvent);
-            //
+            // 
+            menuMainBranches.Name = "menuMainBranches";
+            menuMainBranches.ShortcutKeys = System.Windows.Forms.Keys.F8;
+            menuMainBranches.Size = new System.Drawing.Size(319, 26);
+            menuMainBranches.Tag = "Branches";
+            menuMainBranches.Text = "Branches";
+            menuMainBranches.Click += RightPanelSelectionEvent;
+            // 
             // menuMainRepos
-            //
-            this.menuMainRepos.Name = "menuMainRepos";
-            this.menuMainRepos.ShortcutKeys = System.Windows.Forms.Keys.F10;
-            this.menuMainRepos.Size = new System.Drawing.Size(230, 22);
-            this.menuMainRepos.Tag = "Repos";
-            this.menuMainRepos.Text = "Repository";
-            this.menuMainRepos.Click += new System.EventHandler(this.RightPanelSelectionEvent);
-            //
+            // 
+            menuMainRepos.Name = "menuMainRepos";
+            menuMainRepos.ShortcutKeys = System.Windows.Forms.Keys.F10;
+            menuMainRepos.Size = new System.Drawing.Size(319, 26);
+            menuMainRepos.Tag = "Repos";
+            menuMainRepos.Text = "Repository";
+            menuMainRepos.Click += RightPanelSelectionEvent;
+            // 
             // toolStripSeparator3
-            //
-            this.toolStripSeparator3.Name = "toolStripSeparator3";
-            this.toolStripSeparator3.Size = new System.Drawing.Size(227, 6);
-            //
+            // 
+            toolStripSeparator3.Name = "toolStripSeparator3";
+            toolStripSeparator3.Size = new System.Drawing.Size(316, 6);
+            // 
             // menuView0
-            //
-            this.menuView0.Name = "menuView0";
-            this.menuView0.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.D1)));
-            this.menuView0.Size = new System.Drawing.Size(230, 22);
-            this.menuView0.Tag = "0";
-            this.menuView0.Text = "Git Status of All Files";
-            this.menuView0.Click += new System.EventHandler(this.ViewSetByMenuItem);
-            //
+            // 
+            menuView0.Name = "menuView0";
+            menuView0.ShortcutKeys = System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.D1;
+            menuView0.Size = new System.Drawing.Size(319, 26);
+            menuView0.Tag = "0";
+            menuView0.Text = "Git Status of All Files";
+            menuView0.Click += ViewSetByMenuItem;
+            // 
             // menuView1
-            //
-            this.menuView1.Name = "menuView1";
-            this.menuView1.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.D2)));
-            this.menuView1.Size = new System.Drawing.Size(230, 22);
-            this.menuView1.Tag = "1";
-            this.menuView1.Text = "Git Status";
-            this.menuView1.Click += new System.EventHandler(this.ViewSetByMenuItem);
-            //
+            // 
+            menuView1.Name = "menuView1";
+            menuView1.ShortcutKeys = System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.D2;
+            menuView1.Size = new System.Drawing.Size(319, 26);
+            menuView1.Tag = "1";
+            menuView1.Text = "Git Status";
+            menuView1.Click += ViewSetByMenuItem;
+            // 
             // menuView2
-            //
-            this.menuView2.Name = "menuView2";
-            this.menuView2.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.D3)));
-            this.menuView2.Size = new System.Drawing.Size(230, 22);
-            this.menuView2.Tag = "2";
-            this.menuView2.Text = "Git View of Repo";
-            this.menuView2.Click += new System.EventHandler(this.ViewSetByMenuItem);
-            //
+            // 
+            menuView2.Name = "menuView2";
+            menuView2.ShortcutKeys = System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.D3;
+            menuView2.Size = new System.Drawing.Size(319, 26);
+            menuView2.Tag = "2";
+            menuView2.Text = "Git View of Repo";
+            menuView2.Click += ViewSetByMenuItem;
+            // 
             // menuView3
-            //
-            this.menuView3.Name = "menuView3";
-            this.menuView3.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.D4)));
-            this.menuView3.Size = new System.Drawing.Size(230, 22);
-            this.menuView3.Tag = "3";
-            this.menuView3.Text = "Local File View";
-            this.menuView3.Click += new System.EventHandler(this.ViewSetByMenuItem);
-            //
+            // 
+            menuView3.Name = "menuView3";
+            menuView3.ShortcutKeys = System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.D4;
+            menuView3.Size = new System.Drawing.Size(319, 26);
+            menuView3.Tag = "3";
+            menuView3.Text = "Local File View";
+            menuView3.Click += ViewSetByMenuItem;
+            // 
             // menuView4
-            //
-            this.menuView4.Name = "menuView4";
-            this.menuView4.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.D5)));
-            this.menuView4.Size = new System.Drawing.Size(230, 22);
-            this.menuView4.Tag = "4";
-            this.menuView4.Text = "Local Files Not in Repo";
-            this.menuView4.Click += new System.EventHandler(this.ViewSetByMenuItem);
-            //
+            // 
+            menuView4.Name = "menuView4";
+            menuView4.ShortcutKeys = System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.D5;
+            menuView4.Size = new System.Drawing.Size(319, 26);
+            menuView4.Tag = "4";
+            menuView4.Text = "Local Files Not in Repo";
+            menuView4.Click += ViewSetByMenuItem;
+            // 
             // menuView5
-            //
-            this.menuView5.Name = "menuView5";
-            this.menuView5.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.D6)));
-            this.menuView5.Size = new System.Drawing.Size(230, 22);
-            this.menuView5.Tag = "5";
-            this.menuView5.Text = "Local Files Not in .gitignore";
-            this.menuView5.Click += new System.EventHandler(this.ViewSetByMenuItem);
-            //
+            // 
+            menuView5.Name = "menuView5";
+            menuView5.ShortcutKeys = System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.D6;
+            menuView5.Size = new System.Drawing.Size(319, 26);
+            menuView5.Tag = "5";
+            menuView5.Text = "Local Files Not in .gitignore";
+            menuView5.Click += ViewSetByMenuItem;
+            // 
             // toolStripSeparator4
-            //
-            this.toolStripSeparator4.Name = "toolStripSeparator4";
-            this.toolStripSeparator4.Size = new System.Drawing.Size(227, 6);
-            //
+            // 
+            toolStripSeparator4.Name = "toolStripSeparator4";
+            toolStripSeparator4.Size = new System.Drawing.Size(316, 6);
+            // 
             // menuMainRefresh
-            //
-            this.menuMainRefresh.Name = "menuMainRefresh";
-            this.menuMainRefresh.ShortcutKeys = System.Windows.Forms.Keys.F5;
-            this.menuMainRefresh.Size = new System.Drawing.Size(230, 22);
-            this.menuMainRefresh.Text = "Refresh Active Pane";
-            this.menuMainRefresh.Click += new System.EventHandler(this.MenuRefreshAll);
-            //
+            // 
+            menuMainRefresh.Name = "menuMainRefresh";
+            menuMainRefresh.ShortcutKeys = System.Windows.Forms.Keys.F5;
+            menuMainRefresh.Size = new System.Drawing.Size(319, 26);
+            menuMainRefresh.Text = "Refresh Active Pane";
+            menuMainRefresh.Click += MenuRefreshAll;
+            // 
             // menuViewLogWindow
-            //
-            this.menuViewLogWindow.Name = "menuViewLogWindow";
-            this.menuViewLogWindow.Size = new System.Drawing.Size(230, 22);
-            this.menuViewLogWindow.Text = "Log Window";
-            this.menuViewLogWindow.Click += new System.EventHandler(this.LogWindowToolStripMenuItemClick);
-            //
+            // 
+            menuViewLogWindow.Name = "menuViewLogWindow";
+            menuViewLogWindow.Size = new System.Drawing.Size(319, 26);
+            menuViewLogWindow.Text = "Log Window";
+            menuViewLogWindow.Click += LogWindowToolStripMenuItemClick;
+            // 
             // menuViewCommandLine
-            //
-            this.menuViewCommandLine.Name = "menuViewCommandLine";
-            this.menuViewCommandLine.ShortcutKeys = System.Windows.Forms.Keys.F3;
-            this.menuViewCommandLine.Size = new System.Drawing.Size(230, 22);
-            this.menuViewCommandLine.Text = "Command Line";
-            this.menuViewCommandLine.Click += new System.EventHandler(this.MenuViewCommandLineClick);
-            //
+            // 
+            menuViewCommandLine.Name = "menuViewCommandLine";
+            menuViewCommandLine.ShortcutKeys = System.Windows.Forms.Keys.F3;
+            menuViewCommandLine.Size = new System.Drawing.Size(319, 26);
+            menuViewCommandLine.Text = "Command Line";
+            menuViewCommandLine.Click += MenuViewCommandLineClick;
+            // 
             // menuMainSettings
-            //
-            this.menuMainSettings.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuMainOptions,
-            this.menuMainManageKeys,
-            this.menuMainManageHttps,
-            this.toolStripSeparator5,
-            this.menuMainSwitchRemoteRepo,
-            this.menuMainEditRemoteRepo,
-            this.menuMainFetchFromRemote,
-            this.menuMainPullFromRemote,
-            this.menuMainPushToRemote});
-            this.menuMainSettings.Name = "menuMainSettings";
-            this.menuMainSettings.Size = new System.Drawing.Size(61, 20);
-            this.menuMainSettings.Text = "Settings";
-            //
+            // 
+            menuMainSettings.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { menuMainOptions, menuMainManageKeys, menuMainManageHttps, toolStripSeparator5, menuMainSwitchRemoteRepo, menuMainEditRemoteRepo, menuMainFetchFromRemote, menuMainPullFromRemote, menuMainPushToRemote });
+            menuMainSettings.Name = "menuMainSettings";
+            menuMainSettings.Size = new System.Drawing.Size(76, 24);
+            menuMainSettings.Text = "Settings";
+            // 
             // menuMainOptions
-            //
-            this.menuMainOptions.Name = "menuMainOptions";
-            this.menuMainOptions.Size = new System.Drawing.Size(192, 22);
-            this.menuMainOptions.Text = "Options...";
-            this.menuMainOptions.Click += new System.EventHandler(this.MenuOptions);
-            //
+            // 
+            menuMainOptions.Name = "menuMainOptions";
+            menuMainOptions.Size = new System.Drawing.Size(239, 26);
+            menuMainOptions.Text = "Options...";
+            menuMainOptions.Click += MenuOptions;
+            // 
             // menuMainManageKeys
-            //
-            this.menuMainManageKeys.Enabled = false;
-            this.menuMainManageKeys.Name = "menuMainManageKeys";
-            this.menuMainManageKeys.Size = new System.Drawing.Size(192, 22);
-            this.menuMainManageKeys.Text = "Manage SSH Keys...";
-            this.menuMainManageKeys.Click += new System.EventHandler(this.MenuMainManageKeysClick);
-            //
+            // 
+            menuMainManageKeys.Enabled = false;
+            menuMainManageKeys.Name = "menuMainManageKeys";
+            menuMainManageKeys.Size = new System.Drawing.Size(239, 26);
+            menuMainManageKeys.Text = "Manage SSH Keys...";
+            menuMainManageKeys.Click += MenuMainManageKeysClick;
+            // 
             // menuMainManageHttps
-            //
-            this.menuMainManageHttps.Name = "menuMainManageHttps";
-            this.menuMainManageHttps.Size = new System.Drawing.Size(192, 22);
-            this.menuMainManageHttps.Text = "Manage HTTPS Pass...";
-            this.menuMainManageHttps.Click += new System.EventHandler(this.MenuMainManageHttpsClick);
-            //
+            // 
+            menuMainManageHttps.Name = "menuMainManageHttps";
+            menuMainManageHttps.Size = new System.Drawing.Size(239, 26);
+            menuMainManageHttps.Text = "Manage HTTPS Pass...";
+            menuMainManageHttps.Click += MenuMainManageHttpsClick;
+            // 
             // toolStripSeparator5
-            //
-            this.toolStripSeparator5.Name = "toolStripSeparator5";
-            this.toolStripSeparator5.Size = new System.Drawing.Size(189, 6);
-            //
+            // 
+            toolStripSeparator5.Name = "toolStripSeparator5";
+            toolStripSeparator5.Size = new System.Drawing.Size(236, 6);
+            // 
             // menuMainSwitchRemoteRepo
-            //
-            this.menuMainSwitchRemoteRepo.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.xToolStripMenuItem});
-            this.menuMainSwitchRemoteRepo.Name = "menuMainSwitchRemoteRepo";
-            this.menuMainSwitchRemoteRepo.Size = new System.Drawing.Size(192, 22);
-            this.menuMainSwitchRemoteRepo.Text = "Switch Remote Repo...";
-            //
+            // 
+            menuMainSwitchRemoteRepo.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { xToolStripMenuItem });
+            menuMainSwitchRemoteRepo.Name = "menuMainSwitchRemoteRepo";
+            menuMainSwitchRemoteRepo.Size = new System.Drawing.Size(239, 26);
+            menuMainSwitchRemoteRepo.Text = "Switch Remote Repo...";
+            // 
             // xToolStripMenuItem
-            //
-            this.xToolStripMenuItem.Name = "xToolStripMenuItem";
-            this.xToolStripMenuItem.Size = new System.Drawing.Size(79, 22);
-            this.xToolStripMenuItem.Text = "x";
-            //
+            // 
+            xToolStripMenuItem.Name = "xToolStripMenuItem";
+            xToolStripMenuItem.Size = new System.Drawing.Size(99, 26);
+            xToolStripMenuItem.Text = "x";
+            // 
             // menuMainEditRemoteRepo
-            //
-            this.menuMainEditRemoteRepo.Name = "menuMainEditRemoteRepo";
-            this.menuMainEditRemoteRepo.Size = new System.Drawing.Size(192, 22);
-            this.menuMainEditRemoteRepo.Text = "Edit Remote Repos...";
-            this.menuMainEditRemoteRepo.Click += new System.EventHandler(this.MenuEditRemoteRepos);
-            //
+            // 
+            menuMainEditRemoteRepo.Name = "menuMainEditRemoteRepo";
+            menuMainEditRemoteRepo.Size = new System.Drawing.Size(239, 26);
+            menuMainEditRemoteRepo.Text = "Edit Remote Repos...";
+            menuMainEditRemoteRepo.Click += MenuEditRemoteRepos;
+            // 
             // menuMainFetchFromRemote
-            //
-            this.menuMainFetchFromRemote.Name = "menuMainFetchFromRemote";
-            this.menuMainFetchFromRemote.Size = new System.Drawing.Size(192, 22);
-            this.menuMainFetchFromRemote.Text = "Fetch from Remote";
-            this.menuMainFetchFromRemote.Click += new System.EventHandler(this.MenuRepoFetch);
-            //
+            // 
+            menuMainFetchFromRemote.Name = "menuMainFetchFromRemote";
+            menuMainFetchFromRemote.Size = new System.Drawing.Size(239, 26);
+            menuMainFetchFromRemote.Text = "Fetch from Remote";
+            menuMainFetchFromRemote.Click += MenuRepoFetch;
+            // 
             // menuMainPullFromRemote
-            //
-            this.menuMainPullFromRemote.Name = "menuMainPullFromRemote";
-            this.menuMainPullFromRemote.Size = new System.Drawing.Size(192, 22);
-            this.menuMainPullFromRemote.Text = "Pull from Remote";
-            this.menuMainPullFromRemote.Click += new System.EventHandler(this.MenuRepoPull);
-            //
+            // 
+            menuMainPullFromRemote.Name = "menuMainPullFromRemote";
+            menuMainPullFromRemote.Size = new System.Drawing.Size(239, 26);
+            menuMainPullFromRemote.Text = "Pull from Remote";
+            menuMainPullFromRemote.Click += MenuRepoPull;
+            // 
             // menuMainPushToRemote
-            //
-            this.menuMainPushToRemote.Name = "menuMainPushToRemote";
-            this.menuMainPushToRemote.Size = new System.Drawing.Size(192, 22);
-            this.menuMainPushToRemote.Text = "Push to Remote";
-            this.menuMainPushToRemote.Click += new System.EventHandler(this.MenuRepoPush);
-            //
+            // 
+            menuMainPushToRemote.Name = "menuMainPushToRemote";
+            menuMainPushToRemote.Size = new System.Drawing.Size(239, 26);
+            menuMainPushToRemote.Text = "Push to Remote";
+            menuMainPushToRemote.Click += MenuRepoPush;
+            // 
             // menuMainChangelist
-            //
-            this.menuMainChangelist.Name = "menuMainChangelist";
-            this.menuMainChangelist.Size = new System.Drawing.Size(75, 20);
-            this.menuMainChangelist.Text = "Changelist";
-            this.menuMainChangelist.DropDownOpening += new System.EventHandler(this.MenuMainChangelistDropDownOpening);
-            //
+            // 
+            menuMainChangelist.Name = "menuMainChangelist";
+            menuMainChangelist.Size = new System.Drawing.Size(92, 24);
+            menuMainChangelist.Text = "Changelist";
+            menuMainChangelist.DropDownOpening += MenuMainChangelistDropDownOpening;
+            // 
             // menuMainBranch
-            //
-            this.menuMainBranch.Name = "menuMainBranch";
-            this.menuMainBranch.Size = new System.Drawing.Size(67, 20);
-            this.menuMainBranch.Text = "Branches";
-            this.menuMainBranch.DropDownOpening += new System.EventHandler(this.MenuMainBranchDropDownOpening);
-            //
+            // 
+            menuMainBranch.Name = "menuMainBranch";
+            menuMainBranch.Size = new System.Drawing.Size(82, 24);
+            menuMainBranch.Text = "Branches";
+            menuMainBranch.DropDownOpening += MenuMainBranchDropDownOpening;
+            // 
             // menuMainRepository
-            //
-            this.menuMainRepository.Name = "menuMainRepository";
-            this.menuMainRepository.Size = new System.Drawing.Size(75, 20);
-            this.menuMainRepository.Text = "Repository";
-            this.menuMainRepository.DropDownOpening += new System.EventHandler(this.MenuMainRepositoryDropDownOpening);
-            //
+            // 
+            menuMainRepository.Name = "menuMainRepository";
+            menuMainRepository.Size = new System.Drawing.Size(94, 24);
+            menuMainRepository.Text = "Repository";
+            menuMainRepository.DropDownOpening += MenuMainRepositoryDropDownOpening;
+            // 
             // menuMainTools
-            //
-            this.menuMainTools.Name = "menuMainTools";
-            this.menuMainTools.Size = new System.Drawing.Size(48, 20);
-            this.menuMainTools.Text = "Tools";
-            this.menuMainTools.DropDownOpening += new System.EventHandler(this.MenuMainToolsDropDownOpening);
-            //
+            // 
+            menuMainTools.Name = "menuMainTools";
+            menuMainTools.Size = new System.Drawing.Size(58, 24);
+            menuMainTools.Text = "Tools";
+            menuMainTools.DropDownOpening += MenuMainToolsDropDownOpening;
+            // 
             // menuMainHelp
-            //
-            this.menuMainHelp.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.homeMenuItem,
-            this.gettingStartedMenuItem,
-            this.checkForUpdatesMenuItem,
-            this.toolStripSeparator6,
-            this.aboutToolStripMenuItem});
-            this.menuMainHelp.Name = "menuMainHelp";
-            this.menuMainHelp.Size = new System.Drawing.Size(44, 20);
-            this.menuMainHelp.Text = "Help";
-            //
+            // 
+            menuMainHelp.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { homeMenuItem, gettingStartedMenuItem, checkForUpdatesMenuItem, toolStripSeparator6, aboutToolStripMenuItem });
+            menuMainHelp.Name = "menuMainHelp";
+            menuMainHelp.Size = new System.Drawing.Size(55, 24);
+            menuMainHelp.Text = "Help";
+            // 
             // homeMenuItem
-            //
-            this.homeMenuItem.Name = "homeMenuItem";
-            this.homeMenuItem.Size = new System.Drawing.Size(171, 22);
-            this.homeMenuItem.Tag = "Home";
-            this.homeMenuItem.Text = "Home";
-            this.homeMenuItem.Click += new System.EventHandler(this.WebsiteClick);
-            //
+            // 
+            homeMenuItem.Name = "homeMenuItem";
+            homeMenuItem.Size = new System.Drawing.Size(213, 26);
+            homeMenuItem.Tag = "Home";
+            homeMenuItem.Text = "Home";
+            homeMenuItem.Click += WebsiteClick;
+            // 
             // gettingStartedMenuItem
-            //
-            this.gettingStartedMenuItem.Name = "gettingStartedMenuItem";
-            this.gettingStartedMenuItem.Size = new System.Drawing.Size(171, 22);
-            this.gettingStartedMenuItem.Tag = "Getting Started";
-            this.gettingStartedMenuItem.Text = "Getting Started";
-            this.gettingStartedMenuItem.Click += new System.EventHandler(this.WebsiteClick);
-            //
+            // 
+            gettingStartedMenuItem.Name = "gettingStartedMenuItem";
+            gettingStartedMenuItem.Size = new System.Drawing.Size(213, 26);
+            gettingStartedMenuItem.Tag = "Getting Started";
+            gettingStartedMenuItem.Text = "Getting Started";
+            gettingStartedMenuItem.Click += WebsiteClick;
+            // 
             // checkForUpdatesMenuItem
-            //
-            this.checkForUpdatesMenuItem.Name = "checkForUpdatesMenuItem";
-            this.checkForUpdatesMenuItem.Size = new System.Drawing.Size(171, 22);
-            this.checkForUpdatesMenuItem.Tag = "Update Check";
-            this.checkForUpdatesMenuItem.Text = "Check for Updates";
-            this.checkForUpdatesMenuItem.Click += new System.EventHandler(this.WebsiteClick);
-            //
+            // 
+            checkForUpdatesMenuItem.Name = "checkForUpdatesMenuItem";
+            checkForUpdatesMenuItem.Size = new System.Drawing.Size(213, 26);
+            checkForUpdatesMenuItem.Tag = "Update Check";
+            checkForUpdatesMenuItem.Text = "Check for Updates";
+            checkForUpdatesMenuItem.Click += WebsiteClick;
+            // 
             // toolStripSeparator6
-            //
-            this.toolStripSeparator6.Name = "toolStripSeparator6";
-            this.toolStripSeparator6.Size = new System.Drawing.Size(168, 6);
-            //
+            // 
+            toolStripSeparator6.Name = "toolStripSeparator6";
+            toolStripSeparator6.Size = new System.Drawing.Size(210, 6);
+            // 
             // aboutToolStripMenuItem
-            //
-            this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(171, 22);
-            this.aboutToolStripMenuItem.Text = "About...";
-            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.AboutToolStripMenuItemClick);
-            //
+            // 
+            aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
+            aboutToolStripMenuItem.Size = new System.Drawing.Size(213, 26);
+            aboutToolStripMenuItem.Text = "About...";
+            aboutToolStripMenuItem.Click += AboutToolStripMenuItemClick;
+            // 
             // statusInfoLabel
-            //
-            this.statusInfoLabel.Name = "statusInfoLabel";
-            this.statusInfoLabel.Size = new System.Drawing.Size(156, 17);
-            this.statusInfoLabel.Text = "GitForce - A Git Visual Client";
-            //
+            // 
+            statusInfoLabel.Name = "statusInfoLabel";
+            statusInfoLabel.Size = new System.Drawing.Size(196, 28);
+            statusInfoLabel.Text = "GitForce - A Git Visual Client";
+            // 
             // statusStrip
-            //
-            this.statusStrip.AutoSize = false;
-            this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.statusInfoLabel});
-            this.statusStrip.Location = new System.Drawing.Point(0, 480);
-            this.statusStrip.Name = "statusStrip";
-            this.statusStrip.Size = new System.Drawing.Size(784, 22);
-            this.statusStrip.TabIndex = 1;
-            //
+            // 
+            statusStrip.AutoSize = false;
+            statusStrip.ImageScalingSize = new System.Drawing.Size(20, 20);
+            statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { statusInfoLabel });
+            statusStrip.Location = new System.Drawing.Point(0, 738);
+            statusStrip.Name = "statusStrip";
+            statusStrip.Padding = new System.Windows.Forms.Padding(1, 0, 19, 0);
+            statusStrip.Size = new System.Drawing.Size(1045, 34);
+            statusStrip.TabIndex = 1;
+            // 
             // splitContainer1
-            //
-            this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer1.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
-            this.splitContainer1.Location = new System.Drawing.Point(0, 49);
-            this.splitContainer1.Name = "splitContainer1";
-            this.splitContainer1.Orientation = System.Windows.Forms.Orientation.Horizontal;
-            //
+            // 
+            splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
+            splitContainer1.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
+            splitContainer1.Location = new System.Drawing.Point(0, 57);
+            splitContainer1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            splitContainer1.Name = "splitContainer1";
+            splitContainer1.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
             // splitContainer1.Panel1
-            //
-            this.splitContainer1.Panel1.Controls.Add(this.splitContainer2);
-            //
+            // 
+            splitContainer1.Panel1.Controls.Add(splitContainer2);
+            // 
             // splitContainer1.Panel2
-            //
-            this.splitContainer1.Panel2.Controls.Add(this.listStatus);
-            this.splitContainer1.Panel2.Controls.Add(this.cmdBox);
-            this.splitContainer1.Size = new System.Drawing.Size(784, 431);
-            this.splitContainer1.SplitterDistance = 239;
-            this.splitContainer1.TabIndex = 2;
-            //
+            // 
+            splitContainer1.Panel2.Controls.Add(listStatus);
+            splitContainer1.Panel2.Controls.Add(cmdBox);
+            splitContainer1.Size = new System.Drawing.Size(1045, 681);
+            splitContainer1.SplitterDistance = 386;
+            splitContainer1.SplitterWidth = 6;
+            splitContainer1.TabIndex = 2;
+            // 
             // splitContainer2
-            //
-            this.splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer2.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
-            this.splitContainer2.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer2.Name = "splitContainer2";
-            //
+            // 
+            splitContainer2.Dock = System.Windows.Forms.DockStyle.Fill;
+            splitContainer2.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
+            splitContainer2.Location = new System.Drawing.Point(0, 0);
+            splitContainer2.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            splitContainer2.Name = "splitContainer2";
+            // 
             // splitContainer2.Panel2
-            //
-            this.splitContainer2.Panel2.Controls.Add(this.rightTabControl);
-            this.splitContainer2.Size = new System.Drawing.Size(784, 239);
-            this.splitContainer2.SplitterDistance = 373;
-            this.splitContainer2.TabIndex = 0;
-            //
+            // 
+            splitContainer2.Panel2.Controls.Add(rightTabControl);
+            splitContainer2.Size = new System.Drawing.Size(1045, 386);
+            splitContainer2.SplitterDistance = 497;
+            splitContainer2.SplitterWidth = 5;
+            splitContainer2.TabIndex = 0;
+            // 
             // rightTabControl
-            //
-            this.rightTabControl.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.rightTabControl.Location = new System.Drawing.Point(0, 0);
-            this.rightTabControl.Name = "rightTabControl";
-            this.rightTabControl.SelectedIndex = 0;
-            this.rightTabControl.ShowToolTips = true;
-            this.rightTabControl.Size = new System.Drawing.Size(407, 239);
-            this.rightTabControl.TabIndex = 0;
-            this.rightTabControl.SelectedIndexChanged += new System.EventHandler(this.RightPanelSelectionEvent);
-            //
+            // 
+            rightTabControl.Dock = System.Windows.Forms.DockStyle.Fill;
+            rightTabControl.Location = new System.Drawing.Point(0, 0);
+            rightTabControl.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            rightTabControl.Name = "rightTabControl";
+            rightTabControl.SelectedIndex = 0;
+            rightTabControl.ShowToolTips = true;
+            rightTabControl.Size = new System.Drawing.Size(543, 386);
+            rightTabControl.TabIndex = 0;
+            rightTabControl.SelectedIndexChanged += RightPanelSelectionEvent;
+            // 
             // listStatus
-            //
-            this.listStatus.ContextMenuStrip = this.menuStatus;
-            this.listStatus.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.listStatus.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
-            this.listStatus.Font = new System.Drawing.Font("Bitstream Vera Sans Mono", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.listStatus.FormattingEnabled = true;
-            this.listStatus.IntegralHeight = false;
-            this.listStatus.ItemHeight = 15;
-            this.listStatus.Location = new System.Drawing.Point(0, 0);
-            this.listStatus.Name = "listStatus";
-            this.listStatus.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
-            this.listStatus.Size = new System.Drawing.Size(784, 165);
-            this.listStatus.TabIndex = 0;
-            this.listStatus.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.ListStatusDrawItem);
-            //
+            // 
+            listStatus.ContextMenuStrip = menuStatus;
+            listStatus.Dock = System.Windows.Forms.DockStyle.Fill;
+            listStatus.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
+            listStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            listStatus.FormattingEnabled = true;
+            listStatus.IntegralHeight = false;
+            listStatus.ItemHeight = 15;
+            listStatus.Location = new System.Drawing.Point(0, 0);
+            listStatus.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            listStatus.Name = "listStatus";
+            listStatus.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
+            listStatus.Size = new System.Drawing.Size(1045, 262);
+            listStatus.TabIndex = 0;
+            listStatus.DrawItem += ListStatusDrawItem;
+            // 
             // menuStatus
-            //
-            this.menuStatus.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuStatusCopy,
-            this.menuStatusSelectAll,
-            this.toolStripSeparator1,
-            this.menuStatusClear});
-            this.menuStatus.Name = "menuStatus";
-            this.menuStatus.Size = new System.Drawing.Size(123, 76);
-            //
+            // 
+            menuStatus.ImageScalingSize = new System.Drawing.Size(20, 20);
+            menuStatus.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { menuStatusCopy, menuStatusSelectAll, toolStripSeparator1, menuStatusClear });
+            menuStatus.Name = "menuStatus";
+            menuStatus.Size = new System.Drawing.Size(141, 82);
+            // 
             // menuStatusCopy
-            //
-            this.menuStatusCopy.Name = "menuStatusCopy";
-            this.menuStatusCopy.Size = new System.Drawing.Size(122, 22);
-            this.menuStatusCopy.Text = "Copy";
-            this.menuStatusCopy.Click += new System.EventHandler(this.MenuStatusCopyClick);
-            //
+            // 
+            menuStatusCopy.Name = "menuStatusCopy";
+            menuStatusCopy.Size = new System.Drawing.Size(140, 24);
+            menuStatusCopy.Text = "Copy";
+            menuStatusCopy.Click += MenuStatusCopyClick;
+            // 
             // menuStatusSelectAll
-            //
-            this.menuStatusSelectAll.Name = "menuStatusSelectAll";
-            this.menuStatusSelectAll.Size = new System.Drawing.Size(122, 22);
-            this.menuStatusSelectAll.Text = "Select All";
-            this.menuStatusSelectAll.Click += new System.EventHandler(this.MenuStatusSelectAllClick);
-            //
+            // 
+            menuStatusSelectAll.Name = "menuStatusSelectAll";
+            menuStatusSelectAll.Size = new System.Drawing.Size(140, 24);
+            menuStatusSelectAll.Text = "Select All";
+            menuStatusSelectAll.Click += MenuStatusSelectAllClick;
+            // 
             // toolStripSeparator1
-            //
-            this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(119, 6);
-            //
+            // 
+            toolStripSeparator1.Name = "toolStripSeparator1";
+            toolStripSeparator1.Size = new System.Drawing.Size(137, 6);
+            // 
             // menuStatusClear
-            //
-            this.menuStatusClear.Name = "menuStatusClear";
-            this.menuStatusClear.Size = new System.Drawing.Size(122, 22);
-            this.menuStatusClear.Text = "Clear";
-            this.menuStatusClear.Click += new System.EventHandler(this.MenuSelectClearClick);
-            //
+            // 
+            menuStatusClear.Name = "menuStatusClear";
+            menuStatusClear.Size = new System.Drawing.Size(140, 24);
+            menuStatusClear.Text = "Clear";
+            menuStatusClear.Click += MenuSelectClearClick;
+            // 
             // cmdBox
-            //
-            this.cmdBox.AcceptsReturn = true;
-            this.cmdBox.BackColor = System.Drawing.SystemColors.Info;
-            this.cmdBox.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.cmdBox.Font = new System.Drawing.Font("Segoe UI Symbol", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cmdBox.Location = new System.Drawing.Point(0, 165);
-            this.cmdBox.Name = "cmdBox";
-            this.cmdBox.Size = new System.Drawing.Size(784, 23);
-            this.cmdBox.TabIndex = 1;
-            this.cmdBox.TextReady += new GitForce.TextBoxEx.TextReadyEventHandler(this.CmdBoxTextReady);
-            //
+            // 
+            cmdBox.AcceptsReturn = true;
+            cmdBox.BackColor = System.Drawing.SystemColors.Info;
+            cmdBox.Dock = System.Windows.Forms.DockStyle.Bottom;
+            cmdBox.Font = new System.Drawing.Font("Segoe UI Symbol", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+            cmdBox.Location = new System.Drawing.Point(0, 262);
+            cmdBox.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            cmdBox.Name = "cmdBox";
+            cmdBox.Size = new System.Drawing.Size(1045, 27);
+            cmdBox.TabIndex = 1;
+            cmdBox.TextReady += CmdBoxTextReady;
+            // 
             // toolStrip
-            //
-            this.toolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.btAdd,
-            this.btUpdate,
-            this.btUpdateAll,
-            this.btRevert,
-            this.btDelete,
-            this.btDeleteFs,
-            this.btEdit,
-            this.toolStripSeparator8,
-            this.btPull,
-            this.btPush,
-            this.toolStripSeparator7,
-            this.btChangelists,
-            this.btSubmitted,
-            this.btBranches,
-            this.btRepos,
-            this.toolStripSeparator2,
-            this.btCancelOperation,
-            this.btOptions,
-            this.btSsh,
-            this.btNewVersion,
-            this.btHttps});
-            this.toolStrip.Location = new System.Drawing.Point(0, 24);
-            this.toolStrip.Name = "toolStrip";
-            this.toolStrip.RenderMode = System.Windows.Forms.ToolStripRenderMode.System;
-            this.toolStrip.Size = new System.Drawing.Size(784, 25);
-            this.toolStrip.TabIndex = 3;
-            this.toolStrip.Text = "toolStrip1";
-            //
+            // 
+            toolStrip.ImageScalingSize = new System.Drawing.Size(20, 20);
+            toolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { btAdd, btUpdate, btUpdateAll, btRevert, btDelete, btDeleteFs, btEdit, toolStripSeparator8, btPull, btPush, toolStripSeparator7, btChangelists, btSubmitted, btBranches, btRepos, toolStripSeparator2, btCancelOperation, btOptions, btSsh, btNewVersion, btHttps });
+            toolStrip.Location = new System.Drawing.Point(0, 30);
+            toolStrip.Name = "toolStrip";
+            toolStrip.RenderMode = System.Windows.Forms.ToolStripRenderMode.System;
+            toolStrip.Size = new System.Drawing.Size(1045, 27);
+            toolStrip.TabIndex = 3;
+            toolStrip.Text = "toolStrip1";
+            // 
             // btAdd
-            //
-            this.btAdd.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btAdd.Enabled = false;
-            this.btAdd.Image = ((System.Drawing.Image)(resources.GetObject("btAdd.Image")));
-            this.btAdd.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btAdd.Name = "btAdd";
-            this.btAdd.Size = new System.Drawing.Size(23, 22);
-            this.btAdd.Text = "Add file to Git";
-            //
+            // 
+            btAdd.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btAdd.Enabled = false;
+            btAdd.Image = (System.Drawing.Image)resources.GetObject("btAdd.Image");
+            btAdd.ImageTransparentColor = System.Drawing.Color.Magenta;
+            btAdd.Name = "btAdd";
+            btAdd.Size = new System.Drawing.Size(29, 24);
+            btAdd.Text = "Add file to Git";
+            // 
             // btUpdate
-            //
-            this.btUpdate.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btUpdate.Enabled = false;
-            this.btUpdate.Image = ((System.Drawing.Image)(resources.GetObject("btUpdate.Image")));
-            this.btUpdate.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btUpdate.Name = "btUpdate";
-            this.btUpdate.Size = new System.Drawing.Size(23, 22);
-            this.btUpdate.Text = "Update Changelist";
-            //
+            // 
+            btUpdate.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btUpdate.Enabled = false;
+            btUpdate.Image = (System.Drawing.Image)resources.GetObject("btUpdate.Image");
+            btUpdate.ImageTransparentColor = System.Drawing.Color.Magenta;
+            btUpdate.Name = "btUpdate";
+            btUpdate.Size = new System.Drawing.Size(29, 24);
+            btUpdate.Text = "Update Changelist";
+            // 
             // btUpdateAll
-            //
-            this.btUpdateAll.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btUpdateAll.Enabled = false;
-            this.btUpdateAll.Image = ((System.Drawing.Image)(resources.GetObject("btUpdateAll.Image")));
-            this.btUpdateAll.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btUpdateAll.Name = "btUpdateAll";
-            this.btUpdateAll.Size = new System.Drawing.Size(23, 22);
-            this.btUpdateAll.Text = "Update Changelist with All Files";
-            //
+            // 
+            btUpdateAll.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btUpdateAll.Enabled = false;
+            btUpdateAll.Image = (System.Drawing.Image)resources.GetObject("btUpdateAll.Image");
+            btUpdateAll.ImageTransparentColor = System.Drawing.Color.Magenta;
+            btUpdateAll.Name = "btUpdateAll";
+            btUpdateAll.Size = new System.Drawing.Size(29, 24);
+            btUpdateAll.Text = "Update Changelist with All Files";
+            // 
             // btRevert
-            //
-            this.btRevert.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btRevert.Enabled = false;
-            this.btRevert.Image = ((System.Drawing.Image)(resources.GetObject("btRevert.Image")));
-            this.btRevert.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btRevert.Name = "btRevert";
-            this.btRevert.Size = new System.Drawing.Size(23, 22);
-            this.btRevert.Text = "Revert";
-            //
+            // 
+            btRevert.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btRevert.Enabled = false;
+            btRevert.Image = (System.Drawing.Image)resources.GetObject("btRevert.Image");
+            btRevert.ImageTransparentColor = System.Drawing.Color.Magenta;
+            btRevert.Name = "btRevert";
+            btRevert.Size = new System.Drawing.Size(29, 24);
+            btRevert.Text = "Revert";
+            // 
             // btDelete
-            //
-            this.btDelete.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btDelete.Enabled = false;
-            this.btDelete.Image = ((System.Drawing.Image)(resources.GetObject("btDelete.Image")));
-            this.btDelete.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btDelete.Name = "btDelete";
-            this.btDelete.Size = new System.Drawing.Size(23, 22);
-            this.btDelete.Text = "Open for Delete";
-            //
+            // 
+            btDelete.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btDelete.Enabled = false;
+            btDelete.Image = (System.Drawing.Image)resources.GetObject("btDelete.Image");
+            btDelete.ImageTransparentColor = System.Drawing.Color.Magenta;
+            btDelete.Name = "btDelete";
+            btDelete.Size = new System.Drawing.Size(29, 24);
+            btDelete.Text = "Open for Delete";
+            // 
             // btDeleteFs
-            //
-            this.btDeleteFs.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btDeleteFs.Enabled = false;
-            this.btDeleteFs.Image = ((System.Drawing.Image)(resources.GetObject("btDeleteFs.Image")));
-            this.btDeleteFs.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btDeleteFs.Name = "btDeleteFs";
-            this.btDeleteFs.Size = new System.Drawing.Size(23, 22);
-            this.btDeleteFs.Text = "Delete from File System";
-            //
+            // 
+            btDeleteFs.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btDeleteFs.Enabled = false;
+            btDeleteFs.Image = (System.Drawing.Image)resources.GetObject("btDeleteFs.Image");
+            btDeleteFs.ImageTransparentColor = System.Drawing.Color.Magenta;
+            btDeleteFs.Name = "btDeleteFs";
+            btDeleteFs.Size = new System.Drawing.Size(29, 24);
+            btDeleteFs.Text = "Delete from File System";
+            // 
             // btEdit
-            //
-            this.btEdit.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btEdit.Enabled = false;
-            this.btEdit.Image = ((System.Drawing.Image)(resources.GetObject("btEdit.Image")));
-            this.btEdit.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btEdit.Name = "btEdit";
-            this.btEdit.Size = new System.Drawing.Size(23, 22);
-            this.btEdit.Text = "Edit using default editor";
-            //
+            // 
+            btEdit.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btEdit.Enabled = false;
+            btEdit.Image = (System.Drawing.Image)resources.GetObject("btEdit.Image");
+            btEdit.ImageTransparentColor = System.Drawing.Color.Magenta;
+            btEdit.Name = "btEdit";
+            btEdit.Size = new System.Drawing.Size(29, 24);
+            btEdit.Text = "Edit using default editor";
+            // 
             // toolStripSeparator8
-            //
-            this.toolStripSeparator8.Name = "toolStripSeparator8";
-            this.toolStripSeparator8.Size = new System.Drawing.Size(6, 25);
-            //
+            // 
+            toolStripSeparator8.Name = "toolStripSeparator8";
+            toolStripSeparator8.Size = new System.Drawing.Size(6, 27);
+            // 
             // btPull
-            //
-            this.btPull.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btPull.Enabled = false;
-            this.btPull.Image = ((System.Drawing.Image)(resources.GetObject("btPull.Image")));
-            this.btPull.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btPull.Name = "btPull";
-            this.btPull.Size = new System.Drawing.Size(23, 22);
-            this.btPull.Text = "Pull from Remote Repo + Ctrl to All";
-            this.btPull.Click += new System.EventHandler(this.MenuRepoPull);
-            //
+            // 
+            btPull.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btPull.Enabled = false;
+            btPull.Image = (System.Drawing.Image)resources.GetObject("btPull.Image");
+            btPull.ImageTransparentColor = System.Drawing.Color.Magenta;
+            btPull.Name = "btPull";
+            btPull.Size = new System.Drawing.Size(29, 24);
+            btPull.Text = "Pull from Remote Repo + Ctrl to All";
+            btPull.Click += MenuRepoPull;
+            // 
             // btPush
-            //
-            this.btPush.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btPush.Enabled = false;
-            this.btPush.Image = ((System.Drawing.Image)(resources.GetObject("btPush.Image")));
-            this.btPush.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btPush.Name = "btPush";
-            this.btPush.Size = new System.Drawing.Size(23, 22);
-            this.btPush.Text = "Push to Remote Repo + Ctrl to All";
-            this.btPush.Click += new System.EventHandler(this.MenuRepoPush);
-            //
+            // 
+            btPush.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btPush.Enabled = false;
+            btPush.Image = (System.Drawing.Image)resources.GetObject("btPush.Image");
+            btPush.ImageTransparentColor = System.Drawing.Color.Magenta;
+            btPush.Name = "btPush";
+            btPush.Size = new System.Drawing.Size(29, 24);
+            btPush.Text = "Push to Remote Repo + Ctrl to All";
+            btPush.Click += MenuRepoPush;
+            // 
             // toolStripSeparator7
-            //
-            this.toolStripSeparator7.Name = "toolStripSeparator7";
-            this.toolStripSeparator7.Size = new System.Drawing.Size(6, 25);
-            //
+            // 
+            toolStripSeparator7.Name = "toolStripSeparator7";
+            toolStripSeparator7.Size = new System.Drawing.Size(6, 27);
+            // 
             // btChangelists
-            //
-            this.btChangelists.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btChangelists.Image = ((System.Drawing.Image)(resources.GetObject("btChangelists.Image")));
-            this.btChangelists.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-            this.btChangelists.ImageTransparentColor = System.Drawing.Color.Black;
-            this.btChangelists.Name = "btChangelists";
-            this.btChangelists.Size = new System.Drawing.Size(23, 22);
-            this.btChangelists.Tag = "Commits";
-            this.btChangelists.Text = "View Pending Changelists (F6)";
-            this.btChangelists.Click += new System.EventHandler(this.RightPanelSelectionEvent);
-            //
+            // 
+            btChangelists.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btChangelists.Image = (System.Drawing.Image)resources.GetObject("btChangelists.Image");
+            btChangelists.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+            btChangelists.ImageTransparentColor = System.Drawing.Color.Black;
+            btChangelists.Name = "btChangelists";
+            btChangelists.Size = new System.Drawing.Size(29, 24);
+            btChangelists.Tag = "Commits";
+            btChangelists.Text = "View Pending Changelists (F6)";
+            btChangelists.Click += RightPanelSelectionEvent;
+            // 
             // btSubmitted
-            //
-            this.btSubmitted.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btSubmitted.Image = ((System.Drawing.Image)(resources.GetObject("btSubmitted.Image")));
-            this.btSubmitted.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-            this.btSubmitted.ImageTransparentColor = System.Drawing.Color.Black;
-            this.btSubmitted.Name = "btSubmitted";
-            this.btSubmitted.Size = new System.Drawing.Size(23, 22);
-            this.btSubmitted.Tag = "Revisions";
-            this.btSubmitted.Text = "View Submitted Changelists (F7)";
-            this.btSubmitted.Click += new System.EventHandler(this.RightPanelSelectionEvent);
-            //
+            // 
+            btSubmitted.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btSubmitted.Image = (System.Drawing.Image)resources.GetObject("btSubmitted.Image");
+            btSubmitted.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+            btSubmitted.ImageTransparentColor = System.Drawing.Color.Black;
+            btSubmitted.Name = "btSubmitted";
+            btSubmitted.Size = new System.Drawing.Size(29, 24);
+            btSubmitted.Tag = "Revisions";
+            btSubmitted.Text = "View Submitted Changelists (F7)";
+            btSubmitted.Click += RightPanelSelectionEvent;
+            // 
             // btBranches
-            //
-            this.btBranches.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btBranches.Image = ((System.Drawing.Image)(resources.GetObject("btBranches.Image")));
-            this.btBranches.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-            this.btBranches.ImageTransparentColor = System.Drawing.Color.Black;
-            this.btBranches.Name = "btBranches";
-            this.btBranches.Size = new System.Drawing.Size(23, 22);
-            this.btBranches.Tag = "Branches";
-            this.btBranches.Text = "View Branches (F8)";
-            this.btBranches.Click += new System.EventHandler(this.RightPanelSelectionEvent);
-            //
+            // 
+            btBranches.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btBranches.Image = (System.Drawing.Image)resources.GetObject("btBranches.Image");
+            btBranches.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+            btBranches.ImageTransparentColor = System.Drawing.Color.Black;
+            btBranches.Name = "btBranches";
+            btBranches.Size = new System.Drawing.Size(29, 24);
+            btBranches.Tag = "Branches";
+            btBranches.Text = "View Branches (F8)";
+            btBranches.Click += RightPanelSelectionEvent;
+            // 
             // btRepos
-            //
-            this.btRepos.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btRepos.Image = ((System.Drawing.Image)(resources.GetObject("btRepos.Image")));
-            this.btRepos.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-            this.btRepos.ImageTransparentColor = System.Drawing.Color.Black;
-            this.btRepos.Name = "btRepos";
-            this.btRepos.Size = new System.Drawing.Size(23, 22);
-            this.btRepos.Tag = "Repos";
-            this.btRepos.Text = "View Repositories (F10)";
-            this.btRepos.Click += new System.EventHandler(this.RightPanelSelectionEvent);
-            //
+            // 
+            btRepos.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btRepos.Image = (System.Drawing.Image)resources.GetObject("btRepos.Image");
+            btRepos.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+            btRepos.ImageTransparentColor = System.Drawing.Color.Black;
+            btRepos.Name = "btRepos";
+            btRepos.Size = new System.Drawing.Size(29, 24);
+            btRepos.Tag = "Repos";
+            btRepos.Text = "View Repositories (F10)";
+            btRepos.Click += RightPanelSelectionEvent;
+            // 
             // toolStripSeparator2
-            //
-            this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(6, 25);
-            //
+            // 
+            toolStripSeparator2.Name = "toolStripSeparator2";
+            toolStripSeparator2.Size = new System.Drawing.Size(6, 27);
+            // 
             // btCancelOperation
-            //
-            this.btCancelOperation.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btCancelOperation.Enabled = false;
-            this.btCancelOperation.Image = ((System.Drawing.Image)(resources.GetObject("btCancelOperation.Image")));
-            this.btCancelOperation.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btCancelOperation.Name = "btCancelOperation";
-            this.btCancelOperation.Size = new System.Drawing.Size(23, 22);
-            this.btCancelOperation.Text = "Cancel Operation";
-            this.btCancelOperation.Click += new System.EventHandler(this.BtCancelOperationClick);
-            //
+            // 
+            btCancelOperation.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btCancelOperation.Enabled = false;
+            btCancelOperation.Image = (System.Drawing.Image)resources.GetObject("btCancelOperation.Image");
+            btCancelOperation.ImageTransparentColor = System.Drawing.Color.Magenta;
+            btCancelOperation.Name = "btCancelOperation";
+            btCancelOperation.Size = new System.Drawing.Size(29, 24);
+            btCancelOperation.Text = "Cancel Operation";
+            btCancelOperation.Click += BtCancelOperationClick;
+            // 
             // btOptions
-            //
-            this.btOptions.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btOptions.Image = ((System.Drawing.Image)(resources.GetObject("btOptions.Image")));
-            this.btOptions.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-            this.btOptions.ImageTransparentColor = System.Drawing.Color.Black;
-            this.btOptions.Name = "btOptions";
-            this.btOptions.Size = new System.Drawing.Size(23, 22);
-            this.btOptions.Text = "Set GitForce Options";
-            this.btOptions.Click += new System.EventHandler(this.MenuOptions);
-            //
+            // 
+            btOptions.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btOptions.Image = (System.Drawing.Image)resources.GetObject("btOptions.Image");
+            btOptions.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+            btOptions.ImageTransparentColor = System.Drawing.Color.Black;
+            btOptions.Name = "btOptions";
+            btOptions.Size = new System.Drawing.Size(29, 24);
+            btOptions.Text = "Set GitForce Options";
+            btOptions.Click += MenuOptions;
+            // 
             // btSsh
-            //
-            this.btSsh.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btSsh.Enabled = false;
-            this.btSsh.Image = ((System.Drawing.Image)(resources.GetObject("btSsh.Image")));
-            this.btSsh.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btSsh.Name = "btSsh";
-            this.btSsh.Size = new System.Drawing.Size(23, 22);
-            this.btSsh.Text = "Manage SSH Keys";
-            this.btSsh.Click += new System.EventHandler(this.MenuMainManageKeysClick);
-            //
+            // 
+            btSsh.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btSsh.Enabled = false;
+            btSsh.Image = (System.Drawing.Image)resources.GetObject("btSsh.Image");
+            btSsh.ImageTransparentColor = System.Drawing.Color.Magenta;
+            btSsh.Name = "btSsh";
+            btSsh.Size = new System.Drawing.Size(29, 24);
+            btSsh.Text = "Manage SSH Keys";
+            btSsh.Click += MenuMainManageKeysClick;
+            // 
             // btNewVersion
-            //
-            this.btNewVersion.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
-            this.btNewVersion.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btNewVersion.Image = ((System.Drawing.Image)(resources.GetObject("btNewVersion.Image")));
-            this.btNewVersion.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
-            this.btNewVersion.ImageTransparentColor = System.Drawing.Color.Transparent;
-            this.btNewVersion.Name = "btNewVersion";
-            this.btNewVersion.Size = new System.Drawing.Size(44, 24);
-            this.btNewVersion.Text = "A new version of GitForce is available!";
-            this.btNewVersion.Visible = false;
-            this.btNewVersion.Click += new System.EventHandler(this.NewVersionButtonClick);
-            //
+            // 
+            btNewVersion.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            btNewVersion.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btNewVersion.Image = (System.Drawing.Image)resources.GetObject("btNewVersion.Image");
+            btNewVersion.ImageScaling = System.Windows.Forms.ToolStripItemImageScaling.None;
+            btNewVersion.ImageTransparentColor = System.Drawing.Color.Transparent;
+            btNewVersion.Name = "btNewVersion";
+            btNewVersion.Size = new System.Drawing.Size(44, 24);
+            btNewVersion.Text = "A new version of GitForce is available!";
+            btNewVersion.Visible = false;
+            btNewVersion.Click += NewVersionButtonClick;
+            // 
             // btHttps
-            //
-            this.btHttps.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.btHttps.Image = ((System.Drawing.Image)(resources.GetObject("btHttps.Image")));
-            this.btHttps.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.btHttps.Name = "btHttps";
-            this.btHttps.Size = new System.Drawing.Size(23, 22);
-            this.btHttps.ToolTipText = "Manage HTTPS Passwords";
-            this.btHttps.Click += new System.EventHandler(this.MenuMainManageHttpsClick);
-            //
+            // 
+            btHttps.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            btHttps.Image = (System.Drawing.Image)resources.GetObject("btHttps.Image");
+            btHttps.ImageTransparentColor = System.Drawing.Color.Magenta;
+            btHttps.Name = "btHttps";
+            btHttps.Size = new System.Drawing.Size(29, 24);
+            btHttps.ToolTipText = "Manage HTTPS Passwords";
+            btHttps.Click += MenuMainManageHttpsClick;
+            // 
             // timerBusy
-            //
-            this.timerBusy.Interval = 200;
-            this.timerBusy.Tick += new System.EventHandler(this.TimerBusyTick);
-            //
+            // 
+            timerBusy.Interval = 200;
+            timerBusy.Tick += TimerBusyTick;
+            // 
             // loadWk
-            //
-            this.loadWk.DefaultExt = "*.giw";
-            this.loadWk.Filter = "Workspace files (*.giw)|*.giw|All files (*.*)|*.*";
-            this.loadWk.Title = "Load Workspace";
-            //
+            // 
+            loadWk.DefaultExt = "*.giw";
+            loadWk.Filter = "Workspace files (*.giw)|*.giw|All files (*.*)|*.*";
+            loadWk.Title = "Load Workspace";
+            // 
             // saveWk
-            //
-            this.saveWk.DefaultExt = "*.giw";
-            this.saveWk.Filter = "Workspace files (*.giw)|*.giw|All files (*.*)|*.*";
-            this.saveWk.Title = "Save Workspace As";
-            //
+            // 
+            saveWk.DefaultExt = "*.giw";
+            saveWk.Filter = "Workspace files (*.giw)|*.giw|All files (*.*)|*.*";
+            saveWk.Title = "Save Workspace As";
+            // 
             // openTools
-            //
-            this.openTools.DefaultExt = "*.xml";
-            this.openTools.Filter = "Custom tools files (*.xml)|*.xml|All files (*.*)|*.*";
-            this.openTools.Title = "Read Custom Tools from a File";
-            //
+            // 
+            openTools.DefaultExt = "*.xml";
+            openTools.Filter = "Custom tools files (*.xml)|*.xml|All files (*.*)|*.*";
+            openTools.Title = "Read Custom Tools from a File";
+            // 
             // saveTools
-            //
-            this.saveTools.DefaultExt = "*.xml";
-            this.saveTools.Filter = "Custom tools files (*.xml)|*.xml|All files (*.*)|*.*";
-            this.saveTools.Title = "Save Custom Tools to a File";
-            //
+            // 
+            saveTools.DefaultExt = "*.xml";
+            saveTools.Filter = "Custom tools files (*.xml)|*.xml|All files (*.*)|*.*";
+            saveTools.Title = "Save Custom Tools to a File";
+            // 
             // createWk
-            //
-            this.createWk.DefaultExt = "*.giw";
-            this.createWk.Filter = "Workspace files (*.giw)|*.giw|All files (*.*)|*.*";
-            this.createWk.Title = "Create Workspace At";
-            //
+            // 
+            createWk.DefaultExt = "*.giw";
+            createWk.Filter = "Workspace files (*.giw)|*.giw|All files (*.*)|*.*";
+            createWk.Title = "Create Workspace At";
+            // 
             // importWk
-            //
-            this.importWk.DefaultExt = "*.giw";
-            this.importWk.Filter = "Workspace files (*.giw)|*.giw|All files (*.*)|*.*";
-            this.importWk.Title = "Import Workspace";
-            //
+            // 
+            importWk.DefaultExt = "*.giw";
+            importWk.Filter = "Workspace files (*.giw)|*.giw|All files (*.*)|*.*";
+            importWk.Title = "Import Workspace";
+            // 
             // FormMain
-            //
-            this.AllowDrop = true;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(784, 502);
-            this.Controls.Add(this.splitContainer1);
-            this.Controls.Add(this.toolStrip);
-            this.Controls.Add(this.statusStrip);
-            this.Controls.Add(this.menuMain);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Location = new System.Drawing.Point(300, 300);
-            this.MainMenuStrip = this.menuMain;
-            this.Name = "FormMain";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-            this.Text = "GitForce";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormMainFormClosing);
-            this.DragDrop += new System.Windows.Forms.DragEventHandler(this.FormMainDragDrop);
-            this.DragEnter += new System.Windows.Forms.DragEventHandler(this.FormMainDragEnter);
-            this.menuMain.ResumeLayout(false);
-            this.menuMain.PerformLayout();
-            this.statusStrip.ResumeLayout(false);
-            this.statusStrip.PerformLayout();
-            this.splitContainer1.Panel1.ResumeLayout(false);
-            this.splitContainer1.Panel2.ResumeLayout(false);
-            this.splitContainer1.Panel2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
-            this.splitContainer1.ResumeLayout(false);
-            this.splitContainer2.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
-            this.splitContainer2.ResumeLayout(false);
-            this.menuStatus.ResumeLayout(false);
-            this.toolStrip.ResumeLayout(false);
-            this.toolStrip.PerformLayout();
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            // 
+            AllowDrop = true;
+            AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
+            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            ClientSize = new System.Drawing.Size(1045, 772);
+            Controls.Add(splitContainer1);
+            Controls.Add(toolStrip);
+            Controls.Add(statusStrip);
+            Controls.Add(menuMain);
+            Icon = (System.Drawing.Icon)resources.GetObject("$this.Icon");
+            Location = new System.Drawing.Point(300, 300);
+            MainMenuStrip = menuMain;
+            Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            Name = "FormMain";
+            StartPosition = System.Windows.Forms.FormStartPosition.Manual;
+            Text = "GitForce";
+            FormClosing += FormMainFormClosing;
+            DragDrop += FormMainDragDrop;
+            DragEnter += FormMainDragEnter;
+            menuMain.ResumeLayout(false);
+            menuMain.PerformLayout();
+            statusStrip.ResumeLayout(false);
+            statusStrip.PerformLayout();
+            splitContainer1.Panel1.ResumeLayout(false);
+            splitContainer1.Panel2.ResumeLayout(false);
+            splitContainer1.Panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
+            splitContainer1.ResumeLayout(false);
+            splitContainer2.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)splitContainer2).EndInit();
+            splitContainer2.ResumeLayout(false);
+            menuStatus.ResumeLayout(false);
+            toolStrip.ResumeLayout(false);
+            toolStrip.PerformLayout();
+            ResumeLayout(false);
+            PerformLayout();
 
         }
 
