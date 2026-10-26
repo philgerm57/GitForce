@@ -44,6 +44,13 @@ namespace GitForce
         private int tmpFileCounter = 1;
 
         /// <summary>
+        /// Right of the list of revisions: the file at the selected revision against its previous
+        /// version (or two selected revisions against each other), side by side
+        /// </summary>
+        private readonly DiffViewControl diffView = new DiffViewControl { Dock = DockStyle.Fill };
+        private readonly SplitContainer splitDiff = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical };
+
+        /// <summary>
         /// Form constructor. Takes the git file name whose history is to be shown.
         /// </summary>
         public FormRevisionHistory(string targetFile)
@@ -54,6 +61,23 @@ namespace GitForce
 
             // Apply the same font we use for description of changes
             textDescription.Font = Properties.Settings.Default.commitFont;
+
+            // The list and the description on the left, the file side by side on the right
+            Controls.Remove(splitContainer1);
+            splitDiff.Panel1.Controls.Add(splitContainer1);
+            splitDiff.Panel2.Controls.Add(diffView);
+            Controls.Add(splitDiff);
+            splitDiff.BringToFront();
+            diffView.RefreshCompare = ShowSelectedDiff;
+            if (Width < 1200)
+                Width = Math.Min(1400, Screen.FromControl(this).WorkingArea.Width - 40);
+            if (Height < 650)
+                Height = Math.Min(800, Screen.FromControl(this).WorkingArea.Height - 40);
+            Load += (s, e) =>
+            {
+                splitDiff.SplitterDistance = Math.Max(300, splitDiff.Width * 2 / 5);
+                ShowSelectedDiff();
+            };
 
             Sha = String.Empty;
 
@@ -180,6 +204,75 @@ namespace GitForce
                 ExecResult result = RunGit(cmd);
                 textDescription.Text = result.Success() ? result.stdout : result.stderr;
             }
+            ShowSelectedDiff();
+        }
+
+        /// <summary>
+        /// Show the file side by side: one revision against the previous version of the file
+        /// (its parent commit), or two selected revisions against each other (older on the left)
+        /// </summary>
+        private void ShowSelectedDiff()
+        {
+            if (file.Length == 0 || file.EndsWith(Path.DirectorySeparatorChar.ToString()) ||
+                Directory.Exists(Path.Combine(workingDir, file)))
+            {
+                diffView.Clear("This is the history of a folder: open the history of a file to see its content.");
+                return;
+            }
+            if (listRev.SelectedIndices.Count == 0 || listRev.SelectedIndices.Count > 2)
+            {
+                diffView.Clear(listRev.SelectedIndices.Count > 2 ? "Select one or two revisions." :
+                    "Select a revision to see the file side by side with its previous version, " +
+                    "or two revisions (Ctrl+click) to compare them.");
+                return;
+            }
+            Cursor = Cursors.WaitCursor;
+            try
+            {
+                string path = file.Replace(Path.DirectorySeparatorChar, '/');
+                string newer, older, description;
+                if (listRev.SelectedIndices.Count == 1)
+                {
+                    newer = listRev.SelectedItems[0].Name;
+                    older = newer + "^1";
+                    description = "previous  \u2194  " + Short(newer);
+                }
+                else
+                {
+                    // The list shows the newest revision first
+                    int a = listRev.SelectedIndices[0], b = listRev.SelectedIndices[1];
+                    newer = listRev.Items[Math.Min(a, b)].Name;
+                    older = listRev.Items[Math.Max(a, b)].Name;
+                    description = Short(older) + "  \u2194  " + Short(newer);
+                }
+                int code;
+                byte[] left = DiffViewControl.RunGitBytes(workingDir, "show \"" + older + ":" + path + "\"", out code);
+                if (code != 0)
+                {
+                    left = null;        // The file did not exist before this revision
+                    description = "(no previous version)  \u2192  " + Short(newer);
+                }
+                byte[] right = DiffViewControl.RunGitBytes(workingDir, "show \"" + newer + ":" + path + "\"", out code);
+                if (code != 0)
+                {
+                    right = null;       // The file was deleted by this revision
+                    description = Short(older) + "  \u2192  (deleted)";
+                }
+                diffView.ShowCompare(file, description, left, right);
+            }
+            catch (Exception ex)
+            {
+                diffView.Clear(ex.Message);
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+            }
+        }
+
+        private static string Short(string sha)
+        {
+            return sha.Length > 8 ? sha.Substring(0, 7) : sha;
         }
 
         /// <summary>

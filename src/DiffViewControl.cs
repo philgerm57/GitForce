@@ -509,7 +509,8 @@ namespace GitForce
                 {
                     bool isNew = btSideBySide.Checked && col.Index == 3;
                     int longest = (btSideBySide.Checked ? (isNew ? maxNew : maxOld) : Math.Max(maxOld, maxNew)) + 2;
-                    col.Width = Math.Min(65000, Math.Max(fill, longest * charWidth + 8));
+                    // Side by side, both versions share the visible width (the end of long lines is cut)
+                    col.Width = btSideBySide.Checked ? fill : Math.Min(65000, Math.Max(fill, longest * charWidth + 8));
                 }
             }
         }
@@ -545,7 +546,8 @@ namespace GitForce
                 return;
 
             grid.ClearSelection();
-            grid.CurrentCell = grid.Rows[i].Cells[grid.Columns.Count - 1];
+            // The first column, so that the grid does not scroll to the right (whole rows are selected)
+            grid.CurrentCell = grid.Rows[i].Cells[0];
             int end = i;
             while (end < rows.Count && IsChange(rows[end])) grid.Rows[end++].Selected = true;
             try
