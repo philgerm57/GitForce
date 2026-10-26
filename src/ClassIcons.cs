@@ -36,6 +36,12 @@ namespace GitForce
             public Painter Fore() { P = fore; return this; }
             public Painter Acc() { P = accent; return this; }
 
+            public void FillCircle(float cx, float cy, float r)
+            {
+                using (SolidBrush b = new SolidBrush(P.Color))
+                    g.FillEllipse(b, cx - r, cy - r, 2 * r, 2 * r);
+            }
+
             public void Line(float x1, float y1, float x2, float y2) { g.DrawLine(P, x1, y1, x2, y2); }
 
             public void Poly(params float[] xy)
@@ -442,6 +448,75 @@ namespace GitForce
                 p.Poly(9, 21, 5, 21, 3, 19, 3, 5, 5, 3, 9, 3);
                 p.Acc().Line(21, 12, 9, 12); p.Poly(16, 7, 21, 12, 16, 17);
             } } },
+            // ---- Icons of the file trees (an object on the right, a state on the left) ----
+            { "file", new Icon { Accent = Accent.None, Draw = p => { p.File(4, 2, 16, 20); } } },
+            { "treefolder", new Icon { Accent = Accent.Amber, Draw = p =>
+            {
+                p.Acc().Poly(4, 20, 20, 20, 22, 18, 22, 8.5f, 20, 6.5f, 12.5f, 6.5f, 10, 3.5f, 4, 3.5f, 2, 5.5f, 2, 18, 4, 20);
+            } } },
+            { "treefolderopen", new Icon { Accent = Accent.Amber, Draw = p =>
+            {
+                p.Acc().Poly(3.5f, 20, 2, 18.5f, 2, 5.5f, 4, 3.5f, 10, 3.5f, 12.5f, 6.5f, 18, 6.5f, 20, 8.5f, 20, 10.5f);
+                p.Poly(3.5f, 20, 7, 11.5f, 8.5f, 10.5f, 22.5f, 10.5f, 23, 11.5f, 19.5f, 19, 18, 20, 3.5f, 20);
+            } } },
+            { "changelist", new Icon { Accent = Accent.Blue, Draw = p =>
+            {
+                p.RoundRect(4, 4, 16, 18, 2);
+                p.Acc().RoundRect(8, 2, 8, 4, 1);
+                p.Fore().Line(8, 11, 16, 11); p.Line(8, 15, 16, 15); p.Line(8, 19, 13, 19);
+            } } },
+            { "changelists", new Icon { Accent = Accent.Blue, Draw = p =>
+            {
+                p.Poly(4, 17, 4, 5.5f, 6, 3.5f, 14, 3.5f);
+                p.RoundRect(8, 6, 13, 16, 2);
+                p.Acc().Line(11, 12, 18, 12); p.Line(11, 16, 18, 16);
+            } } },
+            { "submodule", new Icon { Accent = Accent.Green, Draw = p =>
+            {
+                p.Acc().Poly(12, 2, 21, 7, 21, 17, 12, 22, 3, 17, 3, 7, 12, 2);
+                p.Fore().Poly(3, 7, 12, 12, 21, 7); p.Line(12, 12, 12, 22);
+            } } },
+            { "submodulemod", new Icon { Accent = Accent.Amber, Draw = p =>
+            {
+                p.Acc().Poly(12, 2, 21, 7, 21, 17, 12, 22, 3, 17, 3, 7, 12, 2);
+                p.Fore().Poly(3, 7, 12, 12, 21, 7); p.Line(12, 12, 12, 22);
+            } } },
+            { "submoduleoff", new Icon { Accent = Accent.Red, Draw = p =>
+            {
+                p.Acc().Poly(12, 2, 21, 7, 21, 17, 12, 22, 3, 17, 3, 7, 12, 2);
+                p.Fore().Poly(3, 7, 12, 12, 21, 7); p.Line(12, 12, 12, 22);
+            } } },
+            // States, drawn on the left of the object
+            { "bmod", new Icon { Accent = Accent.Amber, Draw = p => { p.Acc().FillCircle(12, 12, 5.5f); } } },
+            { "badd", new Icon { Accent = Accent.Green, Draw = p => { p.Acc().Line(12, 5, 12, 19); p.Line(5, 12, 19, 12); } } },
+            { "bdel", new Icon { Accent = Accent.Red, Draw = p => { p.Acc().Line(6.5f, 6.5f, 17.5f, 17.5f); p.Line(17.5f, 6.5f, 6.5f, 17.5f); } } },
+            { "bren", new Icon { Accent = Accent.Blue, Draw = p => { p.Acc().Line(4, 12, 19, 12); p.Poly(13, 6, 19, 12, 13, 18); } } },
+            { "bcopy", new Icon { Accent = Accent.Blue, Draw = p => { p.Acc().RoundRect(9, 9, 11, 11, 2); p.Poly(5, 15, 4, 14, 4, 5, 5, 4, 14, 4, 15, 5); } } },
+            { "bunmerged", new Icon { Accent = Accent.Red, Draw = p =>
+            {
+                p.Acc().Poly(12, 3, 22, 20.5f, 2, 20.5f, 12, 3);
+                p.Line(12, 9.5f, 12, 14); p.Dot(12, 17.5f);
+            } } },
+            { "buntracked", new Icon { Accent = Accent.Red, Draw = p =>
+            {
+                p.Acc().Arc(12, 8.5f, 4.5f, 195, 250);
+                p.Curve(16.1f, 10.4f, 15, 12.5f, 12, 12.5f, 12, 15.5f);
+                p.Dot(12, 20);
+            } } },
+            // Branches tab: a branch, and the current branch
+            { "bidle", new Icon { Accent = Accent.None, Draw = p => { p.Circle(12, 12, 5.5f); } } },
+            { "bcurrent", new Icon { Accent = Accent.Green, Draw = p =>
+            {
+                p.Acc().FillCircle(12, 12, 8.5f);
+                using (Pen check = new Pen(Color.White, 2.6f) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
+                {
+                    Pen keep = p.P;
+                    p.P = check;
+                    p.Poly(8, 12.5f, 11, 15.5f, 16.5f, 9.5f);
+                    p.P = keep;
+                }
+            } } },
+            { "bdot", new Icon { Accent = Accent.Green, Draw = p => { p.Acc().FillCircle(12, 12, 5.5f); } } },
             // HTTPS passwords: a lock
             { "btHttps", new Icon { Accent = Accent.Amber, Draw = p =>
             {
@@ -567,6 +642,61 @@ namespace GitForce
         }
 
         /// <summary>
+        /// An image for the file trees, 32 x 16 pixels: the state (badge) on the left and the
+        /// object on the right. Faded: the object is drawn lighter (ignored files and folders).
+        /// </summary>
+        public static Bitmap TreeImage(string badge, string glyph, bool faded = false)
+        {
+            Bitmap bmp = new Bitmap(32, 16);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                if (glyph != null)
+                {
+                    using (Bitmap obj = Render(glyph, 16))
+                    {
+                        if (faded)
+                        {
+                            using (var attr = new System.Drawing.Imaging.ImageAttributes())
+                            {
+                                attr.SetColorMatrix(new System.Drawing.Imaging.ColorMatrix { Matrix33 = 0.45f });
+                                g.DrawImage(obj, new Rectangle(16, 0, 16, 16), 0, 0, 16, 16, GraphicsUnit.Pixel, attr);
+                            }
+                        }
+                        else
+                            g.DrawImage(obj, 16, 0, 16, 16);
+                    }
+                }
+                if (badge != null)
+                    using (Bitmap b = Render(badge, 16, null, 3f))      // The states are small: a heavier stroke
+                        g.DrawImage(b, 1, 0, 16, 16);
+            }
+            return bmp;
+        }
+
+        /// <summary>
+        /// An image of the Repos tab, 24 x 16 pixels: the repository on the right, and on the left
+        /// a green dot for the current repository and a red ring for the default one (both if it is both)
+        /// </summary>
+        public static Bitmap RepoImage(bool current, bool isDefault, string glyph = "btRepos")
+        {
+            bool dark = ClassTheme.IsDark;
+            Bitmap bmp = new Bitmap(24, 16);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                using (Bitmap obj = Render(glyph, 16))
+                    g.DrawImage(obj, 8, 0, 16, 16);
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                if (isDefault)
+                    using (Pen ring = new Pen(AccentColor(Accent.Red, dark), 1.4f))
+                        g.DrawEllipse(ring, 0.8f, 4.3f, 6.4f, 6.4f);
+                if (current)
+                    using (SolidBrush dot = new SolidBrush(AccentColor(Accent.Green, dark)))
+                        g.FillEllipse(dot, 1.9f, 5.4f, 4.2f, 4.2f);
+            }
+            return bmp;
+        }
+
+        /// <summary>
         /// True if there is a drawn icon for a toolbar item (by its name)
         /// </summary>
         public static bool Has(string name)
@@ -597,7 +727,7 @@ namespace GitForce
         /// <summary>
         /// Draw an icon at a size in pixels, for the current theme (or the theme given)
         /// </summary>
-        public static Bitmap Render(string name, int size, bool? dark = null)
+        public static Bitmap Render(string name, int size, bool? dark = null, float? stroke = null)
         {
             Icon icon = Icons[name];
             bool isDark = dark ?? ClassTheme.IsDark;
@@ -608,7 +738,7 @@ namespace GitForce
                 g.PixelOffsetMode = PixelOffsetMode.HighQuality;
                 g.ScaleTransform(size / 24f, size / 24f);
                 // At 16 pixels a stroke of 2 would be only 1.33 pixels wide: keep the small icons readable
-                float width = size <= 16 ? 2.25f : 2f;
+                float width = stroke ?? (size <= 16 ? 2.25f : 2f);
                 using (Pen fore = MakePen(Foreground(isDark), width))
                 using (Pen accent = MakePen(AccentColor(icon.Accent, isDark), width))
                     icon.Draw(new Painter(g, fore, accent));

@@ -101,6 +101,36 @@ namespace GitForce
             ImageList il = new ImageList();
             il.ImageSize = new Size(32, 16);
             il.ColorDepth = ColorDepth.Depth32Bit;
+
+            if (Properties.Settings.Default.ModernIcons)
+            {
+                // Line icons in the order of the Img enumeration: a state on the left, an object on the right
+                il.Images.Add(ClassIcons.TreeImage(null, "file"));                    // FileUnmodified
+                il.Images.Add(ClassIcons.TreeImage("bmod", "file"));                  // FileModified
+                il.Images.Add(ClassIcons.TreeImage("badd", "file"));                  // FileAdded
+                il.Images.Add(ClassIcons.TreeImage("bdel", "file"));                  // FileDeleted
+                il.Images.Add(ClassIcons.TreeImage("bren", "file"));                  // FileRenamed
+                il.Images.Add(ClassIcons.TreeImage("bcopy", "file"));                 // FileCopied
+                il.Images.Add(ClassIcons.TreeImage("bunmerged", "file"));             // FileUnmerged
+                il.Images.Add(ClassIcons.TreeImage("buntracked", "file"));            // FileUntracked
+                il.Images.Add(ClassIcons.TreeImage(null, "treefolder"));              // FolderClosed
+                il.Images.Add(ClassIcons.TreeImage(null, "treefolderopen"));          // FolderOpened
+                il.Images.Add(ClassIcons.TreeImage(null, "btRepos"));                 // DatabaseClosed
+                il.Images.Add(ClassIcons.TreeImage(null, "btRepos"));                 // DatabaseOpened
+                il.Images.Add(ClassIcons.TreeImage(null, "changelists"));             // ChangelistRoot
+                il.Images.Add(ClassIcons.TreeImage(null, "changelist"));              // Changelist
+                il.Images.Add(ClassIcons.TreeImage("bmod", "treefolder"));            // FolderClosedModified
+                il.Images.Add(ClassIcons.TreeImage("bmod", "treefolderopen"));        // FolderOpenedModified
+                il.Images.Add(ClassIcons.TreeImage(null, "submodule"));               // SubmoduleClosed
+                il.Images.Add(ClassIcons.TreeImage(null, "submodule"));               // SubmoduleOpened
+                il.Images.Add(ClassIcons.TreeImage("bmod", "submodulemod"));          // SubmoduleModified
+                il.Images.Add(ClassIcons.TreeImage(null, "submoduleoff", true));      // SubmoduleUninitialized
+                il.Images.Add(ClassIcons.TreeImage("eyeoff", "treefolder", true));    // FolderIgnored
+                il.Images.Add(ClassIcons.TreeImage("eyeoff", "treefolderopen", true));// FolderIgnoredOpened
+                il.Images.Add(ClassIcons.TreeImage("eyeoff", "file", true));          // FileIgnored
+                return il;
+            }
+
             foreach (var kvp in Res)
                 il.Images.Add(kvp.Value);
 

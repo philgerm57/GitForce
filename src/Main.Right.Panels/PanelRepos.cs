@@ -24,9 +24,26 @@ namespace GitForce.Main.Right.Panels
         {
             InitializeComponent();
 
-            // Add folder icons to the image list for project nodes
-            imageList.Images.Add("ProjectClosed", Properties.Resources.TreeIconFC);
-            imageList.Images.Add("ProjectOpen", Properties.Resources.TreeIconFO);
+            if (Properties.Settings.Default.ModernIcons)
+            {
+                // Line icons, in the order of RepoIcons: a green dot for the current repository,
+                // a red ring for the default one (opened with the workspace)
+                imageList.Images.Clear();
+                imageList.ColorDepth = ColorDepth.Depth32Bit;
+                imageList.ImageSize = new Size(24, 16);
+                imageList.Images.Add(ClassIcons.RepoImage(false, false));
+                imageList.Images.Add(ClassIcons.RepoImage(false, true));
+                imageList.Images.Add(ClassIcons.RepoImage(true, false));
+                imageList.Images.Add(ClassIcons.RepoImage(true, true));
+                imageList.Images.Add("ProjectClosed", ClassIcons.RepoImage(false, false, "treefolder"));
+                imageList.Images.Add("ProjectOpen", ClassIcons.RepoImage(false, false, "treefolderopen"));
+            }
+            else
+            {
+                // Add folder icons to the image list for project nodes
+                imageList.Images.Add("ProjectClosed", Properties.Resources.TreeIconFC);
+                imageList.Images.Add("ProjectOpen", Properties.Resources.TreeIconFO);
+            }
 
             // Load the Scroll icon for the flat/tree toggle button
             btFlatList.Image = new Icon(Properties.Resources.Scroll, 16, 16).ToBitmap();

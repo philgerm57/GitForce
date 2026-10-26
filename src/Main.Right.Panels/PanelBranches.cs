@@ -23,6 +23,17 @@ namespace GitForce.Main.Right.Panels
         {
             InitializeComponent();
 
+            if (Properties.Settings.Default.ModernIcons)
+            {
+                // Line icons, in the order of BranchIcons: the groups, a branch, the current branch
+                imageList.Images.Clear();
+                imageList.ColorDepth = ColorDepth.Depth32Bit;
+                imageList.ImageSize = new Size(16, 16);
+                imageList.Images.Add(ClassIcons.Render("btBranches", 16));
+                imageList.Images.Add(ClassIcons.Render("bidle", 16, null, 2.6f));
+                imageList.Images.Add(ClassIcons.Render("bcurrent", 16));
+            }
+
             // Line icons of the toolbar and of the context menu
             ClassIcons.Attach(contextMenu);
 
