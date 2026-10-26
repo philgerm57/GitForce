@@ -184,6 +184,10 @@ namespace GitForce
             menuMainHelp.DropDownItems.Insert(menuMainHelp.DropDownItems.IndexOf(gettingStartedMenuItem) + 1,
                 new ToolStripMenuItem("Guide de démarrage (français)", null, (s, e) => ClassHelp.OpenFrenchGuide()));
 
+            // Help > Report a bug or suggest an improvement on the GitHub page of the project
+            menuMainHelp.DropDownItems.Insert(menuMainHelp.DropDownItems.IndexOf(checkForUpdatesMenuItem) + 1,
+                new ToolStripMenuItem("Report a Bug / Suggestion", null, WebsiteClick) { Tag = "Discussion" });
+
             // Enable SSH only if the PuTTY support class has been instantiated
             if (App.Putty != null)
             {
@@ -2038,6 +2042,19 @@ namespace GitForce
         #region Custom Tools menu handlers
 
         /// <summary>
+        /// Ctrl+Shift+G opens the memo of the git commands (the Tools menu is only built when it opens)
+        /// </summary>
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == (Keys.Control | Keys.Shift | Keys.G))
+            {
+                FormGitCommands.ShowWindow(this);
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        /// <summary>
         /// Custom Tools menu drop down, build the menu
         /// </summary>
         private void MenuMainToolsDropDownOpening(object sender, EventArgs e)
@@ -2045,6 +2062,9 @@ namespace GitForce
             // Add menu items that are always there, following by tools items
             menuMainTools.DropDownItems.Clear();
             menuMainTools.DropDownItems.AddRange(new ToolStripItem[] {
+                new ToolStripMenuItem("Git Commands...", ClassIcons.Get("terminal", 16), (s, ev) => FormGitCommands.ShowWindow(this))
+                    { ShortcutKeys = Keys.Control | Keys.Shift | Keys.G },
+                new ToolStripSeparator(),
                 new ToolStripMenuItem("Customize", null, CustomizeToolMenuItemClick),
                 new ToolStripMenuItem("Import", null, ImportToolMenuItemClick),
                 new ToolStripMenuItem("Export", null, ExportToolMenuItemClick) });

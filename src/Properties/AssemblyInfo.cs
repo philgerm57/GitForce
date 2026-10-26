@@ -22,7 +22,7 @@ using System.Runtime.InteropServices;
 [assembly: Guid("ac46f858-a555-4b13-9a78-700d6dfaabb4")]
 
 // Remains fixed as application persistent settings are keyed off this number
-[assembly: AssemblyVersion("2.4.0.0")]
+[assembly: AssemblyVersion("2.5.0.0")]
 
 // Effective application version number
-[assembly: AssemblyFileVersion("2.4.00")]
+[assembly: AssemblyFileVersion("2.5.00")]

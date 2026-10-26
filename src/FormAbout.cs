@@ -50,12 +50,11 @@ namespace GitForce
         }
 
         /// <summary>
-        /// User clicked on the "Copy Email" button
-        /// Copy the email address to clipboard.
+        /// User clicked on the "Open" button: open the issues page of the project
         /// </summary>
         private void BtCopyEmailClick(object sender, EventArgs e)
         {
-            Clipboard.SetText("BaltazarStudios@gmail.com");
+            ClassHelp.Handler("Issues");
         }
 
         /// <summary>

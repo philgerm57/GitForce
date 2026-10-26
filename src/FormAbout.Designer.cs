@@ -160,34 +160,34 @@
             // 
             label5.AutoSize = true;
             label5.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
-            label5.Location = new System.Drawing.Point(8, 71);
+            label5.Location = new System.Drawing.Point(8, 101);
             label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label5.Name = "label5";
             label5.Size = new System.Drawing.Size(184, 17);
             label5.TabIndex = 12;
-            label5.Text = "BaltazarStudios@gmail.com";
+            label5.Text = "https://github.com/philgerm57/GitForce/issues";
             // 
             // btCopyEmail
             // 
             btCopyEmail.Anchor = System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right;
-            btCopyEmail.Location = new System.Drawing.Point(463, 56);
+            btCopyEmail.Location = new System.Drawing.Point(463, 84);
             btCopyEmail.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             btCopyEmail.Name = "btCopyEmail";
             btCopyEmail.Size = new System.Drawing.Size(92, 35);
             btCopyEmail.TabIndex = 8;
-            btCopyEmail.Text = "Copy Email";
+            btCopyEmail.Text = "Open";
             btCopyEmail.UseVisualStyleBackColor = true;
             btCopyEmail.Click += BtCopyEmailClick;
             // 
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new System.Drawing.Point(8, 51);
+            label2.Location = new System.Drawing.Point(8, 76);
             label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label2.Name = "label2";
             label2.Size = new System.Drawing.Size(376, 20);
             label2.TabIndex = 6;
-            label2.Text = "For comments, suggestions or bug reports, email me at:";
+            label2.Text = "For comments, suggestions or bug reports, open an issue on GitHub:";
             // 
             // labelNewVersionAvailable
             // 
@@ -217,12 +217,12 @@
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new System.Drawing.Point(8, 103);
+            label3.Location = new System.Drawing.Point(8, 51);
             label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label3.Name = "label3";
             label3.Size = new System.Drawing.Size(217, 20);
             label3.TabIndex = 14;
-            label3.Text = "Modifified by Germain Philippe";
+            label3.Text = "Modified by Germain Philippe";
             // 
             // FormAbout
             // 

@@ -25,7 +25,8 @@ namespace GitForce
             {"Workspace", @"https://baltazarstudios.com/software/gitforce-workspaces"},
             {"Update Check", ProjectUrl + "/releases"},
             {"Download", ProjectUrl + "/releases/latest"},
-            {"Discussion", @"https://sourceforge.net/p/gitforce/discussion"},
+            {"Issues", ProjectUrl + "/issues"},
+            {"Discussion", ProjectUrl + "/issues"},
             {"GPLv3", @"https://www.gnu.org/licenses/gpl-3.0.en.html"},
             {"BaltazarStudios", @"https://www.baltazarstudios.com" }
         };

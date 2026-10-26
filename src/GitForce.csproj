@@ -14,6 +14,7 @@
     <!-- Workspace files (.giw) are stored with BinaryFormatter -->
     <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
     <NoWarn>$(NoWarn);0169;SYSLIB0011;SYSLIB0014;CA1416;WFO1000</NoWarn>
+    <Copyright></Copyright>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
