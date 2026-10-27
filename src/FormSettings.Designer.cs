@@ -49,7 +49,7 @@
             treeNode9,
             treeNode10});
             System.Windows.Forms.TreeNode treeNode12 = new System.Windows.Forms.TreeNode("Aliases");
-            System.Windows.Forms.TreeNode treeNode13 = new System.Windows.Forms.TreeNode("Specifications");
+            System.Windows.Forms.TreeNode treeNode13 = new System.Windows.Forms.TreeNode("Fonts");
             System.Windows.Forms.TreeNode treeNode14 = new System.Windows.Forms.TreeNode("SSL");
             System.Windows.Forms.TreeNode treeNode15 = new System.Windows.Forms.TreeNode("Options", new System.Windows.Forms.TreeNode[] {
             treeNode12,
@@ -152,7 +152,7 @@
             treeNode12.Text = "Aliases";
             treeNode13.Name = "Node0";
             treeNode13.Tag = "Specifications";
-            treeNode13.Text = "Specifications";
+            treeNode13.Text = "Fonts";
             treeNode14.Name = "Node0";
             treeNode14.Tag = "Ssl";
             treeNode14.Text = "SSL";

@@ -273,14 +273,18 @@ namespace GitForce.Main.Right.Panels
                 if (sha != null)
                     ClassHistoryEdit.NewTag(App.Repos.Current, sha);
             });
-            ToolStripMenuItem mReset = new ToolStripMenuItem("Reset", null, MenuResetClick);
-            ToolStripMenuItem mCherry = new ToolStripMenuItem("Cherry pick", null, MenuCherryPickClick);
+            ToolStripMenuItem mReset = new ToolStripMenuItem("Reset...", null, MenuResetClick);
+            ToolStripMenuItem mResetAdvanced = new ToolStripMenuItem("Reset Advanced...", null,
+                (s, e) => FormResetAdvanced.ResetTo(App.Repos.Current, GetSelectedSha(), SelectedSubject()));
+            ToolStripMenuItem mCherry = new ToolStripMenuItem("Cherry-Pick...", null, MenuCherryPickClick);
             ToolStripMenuItem mCopy = new ToolStripMenuItem("Copy SHA", null, MenuCopyShaClick);
             ToolStripMenuItem mColor = new ToolStripMenuItem("Color...", null, MenuColorClick);
             ToolStripMenuItem mClearColors = new ToolStripMenuItem("Clear Colors", null, MenuClearColorsClick);
 
             ToolStripItemCollection menu = new ToolStripItemCollection(owner, new ToolStripItem[] {
-                mDescribe, mEditMessage, mEditAuthor, mNewTag, mReset, mCherry,
+                mDescribe, mEditMessage, mEditAuthor, mNewTag,
+                new ToolStripSeparator(),
+                mCherry, mReset, mResetAdvanced,
                 new ToolStripSeparator(),
                 mCopy,
                 new ToolStripSeparator(),
@@ -288,7 +292,7 @@ namespace GitForce.Main.Right.Panels
             });
 
             // Enable menu items only if there was a change selected
-            mDescribe.Enabled = mEditMessage.Enabled = mEditAuthor.Enabled = mNewTag.Enabled = mReset.Enabled = mCherry.Enabled = mCopy.Enabled = mColor.Enabled = (GetSelectedSha() != null);
+            mDescribe.Enabled = mEditMessage.Enabled = mEditAuthor.Enabled = mNewTag.Enabled = mReset.Enabled = mResetAdvanced.Enabled = mCherry.Enabled = mCopy.Enabled = mColor.Enabled = (GetSelectedSha() != null);
             mClearColors.Enabled = ((App.Repos.Current != null) && (App.Repos.Current.RevColors.Count > 0));
 
             return menu;
@@ -298,6 +302,12 @@ namespace GitForce.Main.Right.Panels
         /// Get the SHA associated with the selected item on the log list
         /// Returns null if the unique SHA cannot be obtained.
         /// </summary>
+        private string SelectedSubject()
+        {
+            ListViewItem item = listRev.SelectedItems.Count == 1 ? listRev.SelectedItems[0] : null;
+            return item != null && item.SubItems.Count > 0 ? item.SubItems[item.SubItems.Count - 1].Text : null;
+        }
+
         private string GetSelectedSha()
         {
             ListView li = listRev;
@@ -340,11 +350,7 @@ namespace GitForce.Main.Right.Panels
         {
             string sha = GetSelectedSha();
             if (sha != null)
-            {
-                string cmd = "cherry-pick --no-commit " + sha;
-                App.Repos.Current.RunCmd(cmd);
-                App.DoRefresh();
-            }
+                FormCherryPick.CherryPick(App.Repos.Current, sha, SelectedSubject());
         }
 
         /// <summary>

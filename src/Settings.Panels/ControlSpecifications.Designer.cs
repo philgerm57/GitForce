@@ -53,7 +53,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(300, 30);
             this.label1.TabIndex = 0;
-            this.label1.Text = "Select fixed width font for commit specificaitons. Also chose wrap around columns.";
+            this.label1.Text = "Fixed-width font for code and commit messages (diff, file viewer, blame, commit and history windows), and maximum line lengths of commit messages.";
             // 
             // label2
             // 
@@ -119,7 +119,7 @@
             this.labelSample.Name = "labelSample";
             this.labelSample.Size = new System.Drawing.Size(294, 33);
             this.labelSample.TabIndex = 0;
-            this.labelSample.Text = "This font will be used for commit messages.";
+            this.labelSample.Text = "Code and commit messages: 0123456789 {}[]()";
             // 
             // label6
             // 
@@ -129,7 +129,7 @@
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(177, 13);
             this.label6.TabIndex = 8;
-            this.label6.Text = "Wrap around column of the first line:";
+            this.label6.Text = "Maximum length of the first line (subject):";
             // 
             // label7
             // 
@@ -139,7 +139,7 @@
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(220, 13);
             this.label7.TabIndex = 9;
-            this.label7.Text = "Wrap around column of the commit message:";
+            this.label7.Text = "Maximum length of the other lines:";
             // 
             // numWrap1
             // 

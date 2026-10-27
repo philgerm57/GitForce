@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -132,6 +133,7 @@ namespace GitForce
             grid.CellFormatting += GridCellFormatting;
             grid.CellPainting += GridCellPainting;
             grid.Resize += (s, e) => SizeColumns();
+            InitCopy();
 
             Controls.Add(grid);
             Controls.Add(toolStrip);
@@ -336,6 +338,106 @@ namespace GitForce
                 exitCode = p.ExitCode;
                 return ms.ToArray();
             }
+        }
+
+        /// <summary>
+        /// Side by side, the side that Ctrl+C copies: the one last clicked (the current version by default)
+        /// </summary>
+        private bool copyCurrent = true;
+
+        /// <summary>
+        /// Copying the selected lines: a context menu, and Ctrl+C. Whole rows are selected, so
+        /// side by side the menu lets you choose which version to copy, and the line numbers and
+        /// the empty filler lines of the other side are never copied.
+        /// </summary>
+        private void InitCopy()
+        {
+            ContextMenuStrip menu = new ContextMenuStrip();
+            menu.Opening += (s, e) =>
+            {
+                bool any = grid.SelectedRows.Count > 0;
+                menu.Items.Clear();
+                if (btSideBySide.Checked)
+                {
+                    menu.Items.Add(new ToolStripMenuItem("Copy Previous Version (left)", null, (s2, e2) => CopySelection(false, false)) { Enabled = any });
+                    menu.Items.Add(new ToolStripMenuItem("Copy Current Version (right)", null, (s2, e2) => CopySelection(true, false)) { Enabled = any });
+                }
+                else
+                {
+                    menu.Items.Add(new ToolStripMenuItem("Copy", null, (s2, e2) => CopySelection(true, false), Keys.Control | Keys.C) { Enabled = any });
+                    menu.Items.Add(new ToolStripMenuItem("Copy with +/- Markers", null, (s2, e2) => CopySelection(true, true)) { Enabled = any });
+                }
+                menu.Items.Add(new ToolStripSeparator());
+                menu.Items.Add(new ToolStripMenuItem("Select All", null, (s2, e2) => grid.SelectAll(), Keys.Control | Keys.A) { Enabled = rows.Count > 0 });
+            };
+            grid.ContextMenuStrip = menu;
+
+            // A right click on a line that is not selected selects it, as in a text editor
+            grid.CellMouseDown += (s, e) =>
+            {
+                if (e.RowIndex < 0 || e.ColumnIndex < 0)
+                    return;
+                copyCurrent = !btSideBySide.Checked || e.ColumnIndex >= 2;
+                if (e.Button == MouseButtons.Right && !grid.Rows[e.RowIndex].Selected)
+                {
+                    grid.ClearSelection();
+                    grid.CurrentCell = grid.Rows[e.RowIndex].Cells[0];
+                    grid.Rows[e.RowIndex].Selected = true;
+                }
+            };
+            grid.KeyDown += (s, e) =>
+            {
+                if (e.Control && (e.KeyCode == Keys.C || e.KeyCode == Keys.Insert))
+                {
+                    CopySelection(copyCurrent, false);
+                    e.Handled = e.SuppressKeyPress = true;
+                }
+            };
+        }
+
+        /// <summary>
+        /// Put the text of the selected lines in the clipboard: one version side by side (current
+        /// or previous), or the lines as shown in the unified view, with their +/- marker if asked
+        /// </summary>
+        private void CopySelection(bool current, bool markers)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (int i in grid.SelectedRows.Cast<DataGridViewRow>().Select(r => r.Index).OrderBy(i => i))
+            {
+                if (i >= rows.Count)
+                    continue;
+                Row r = rows[i];
+                if (r.Kind == RowKind.Hunk || r.Kind == RowKind.Info)
+                    continue;
+                if (btSideBySide.Checked)
+                {
+                    // Filler lines (no line number) do not exist in that version
+                    if (current ? r.NewNo == 0 : r.OldNo == 0)
+                        continue;
+                    sb.Append(current ? r.NewText : r.OldText).Append(Environment.NewLine);
+                }
+                else
+                {
+                    string text = CellText(r, 2, out _, out string prefix);
+                    sb.Append(markers ? prefix : string.Empty).Append(text).Append(Environment.NewLine);
+                }
+            }
+            if (sb.Length > 0)
+                Clipboard.SetText(sb.ToString());
+        }
+
+        /// <summary>
+        /// Use the code font of the settings again, after it was changed
+        /// </summary>
+        public void ApplyCodeFont()
+        {
+            Font font = Properties.Settings.Default.commitFont;
+            if (font == null || font.Equals(grid.DefaultCellStyle.Font))
+                return;
+            grid.DefaultCellStyle.Font = font;
+            grid.RowTemplate.Height = font.Height + 3;
+            if (grid.RowCount > 0)
+                ShowFile();     // The rows are created again, at the new height
         }
 
         /// <summary>

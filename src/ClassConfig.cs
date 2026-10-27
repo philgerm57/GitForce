@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 namespace GitForce
 {
@@ -14,7 +15,7 @@ namespace GitForce
         public static void SetGlobal(string key, string value)
         {
             string setkey = string.IsNullOrEmpty(value) ? "--unset " : "";
-            string val = string.IsNullOrEmpty(value) ? "" : " \"" + value + "\"";
+            string val = string.IsNullOrEmpty(value) ? "" : " " + Quote(value);
             string cmd = setkey + key + val;
 
             if (ClassGit.Run("config --global " + cmd).Success() == false)
@@ -28,11 +29,35 @@ namespace GitForce
         public static void SetLocal(ClassRepo repo, string key, string value)
         {
             string setkey = string.IsNullOrEmpty(value) ? "--unset " : "";
-            string val = string.IsNullOrEmpty(value) ? "" : " \"" + value + "\"";
+            string val = string.IsNullOrEmpty(value) ? "" : " " + Quote(value);
             string cmd = setkey + key + val;
 
             if (repo.Run("config --local " + cmd).Success() == false)
                 App.PrintLogMessage("Error setting local git config parameter!", MessageType.Error);
+        }
+
+        /// <summary>
+        /// Put a value in quotes for the command line, so that the quotes and backslashes it
+        /// contains reach git unchanged (for example an alias like: log --format="%h %s")
+        /// </summary>
+        private static string Quote(string value)
+        {
+            StringBuilder sb = new StringBuilder("\"");
+            int backslashes = 0;
+            foreach (char c in value)
+            {
+                if (c == '\\')
+                {
+                    backslashes++;
+                    continue;
+                }
+                // Backslashes are doubled only in front of a quote, which is itself escaped
+                sb.Append('\\', c == '"' ? backslashes * 2 + 1 : backslashes);
+                sb.Append(c);
+                backslashes = 0;
+            }
+            sb.Append('\\', backslashes * 2);
+            return sb.Append('"').ToString();
         }
 
         /// <summary>

@@ -7,7 +7,7 @@ using System.Windows.Forms;
 namespace GitForce
 {
     /// <summary>
-    /// Light-weight syntax highlighter for C#, C, C++ and Python source lines.
+    /// Light-weight syntax highlighter for C#, C, C++, Python, Java, Rust, Go and Pascal source lines.
     /// It recognizes comments, strings, keywords, numbers and preprocessor lines, which is what
     /// matters to read code; it is not a parser. Multi-line comments and strings are followed
     /// from one line to the next with a state value.
@@ -28,9 +28,10 @@ namespace GitForce
         /// <summary>
         /// Construct that continues on the next line
         /// </summary>
-        public enum State { Normal, BlockComment, VerbatimString, RawString, TripleSingle, TripleDouble }
+        public enum State { Normal, BlockComment, VerbatimString, RawString, TripleSingle, TripleDouble,
+                            BacktickString, BraceComment, ParenComment }
 
-        private enum Lang { CSharp, C, Cpp, Python }
+        private enum Lang { CSharp, C, Cpp, Python, Java, Rust, Go, Pascal }
 
         private readonly Lang lang;
         private readonly HashSet<string> keywords;
@@ -87,6 +88,58 @@ namespace GitForce
             "int", "float", "str", "bool", "list", "dict", "set", "tuple", "bytes", "object",
             "print", "len", "range", "open", "isinstance", "super", "type", "Exception" };
 
+        private static readonly string[] JavaKeywords = {
+            "abstract", "assert", "break", "case", "catch", "class", "const", "continue", "default",
+            "do", "else", "enum", "extends", "final", "finally", "for", "goto", "if", "implements",
+            "import", "instanceof", "interface", "native", "new", "package", "private", "protected",
+            "public", "return", "static", "strictfp", "super", "switch", "synchronized", "this",
+            "throw", "throws", "transient", "try", "volatile", "while", "var", "record", "sealed",
+            "permits", "yield", "true", "false", "null" };
+
+        private static readonly string[] JavaTypes = {
+            "boolean", "byte", "char", "double", "float", "int", "long", "short", "void", "String",
+            "Object", "Integer", "Long", "Double", "Boolean", "Character", "List", "Map", "Set",
+            "ArrayList", "HashMap", "Optional", "Exception", "System" };
+
+        private static readonly string[] RustKeywords = {
+            "as", "async", "await", "break", "const", "continue", "crate", "dyn", "else", "enum",
+            "extern", "false", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod", "move",
+            "mut", "pub", "ref", "return", "self", "Self", "static", "struct", "super", "trait",
+            "true", "type", "unsafe", "use", "where", "while", "union" };
+
+        private static readonly string[] RustTypes = {
+            "i8", "i16", "i32", "i64", "i128", "isize", "u8", "u16", "u32", "u64", "u128", "usize",
+            "f32", "f64", "bool", "char", "str", "String", "Vec", "Option", "Some", "None", "Result",
+            "Ok", "Err", "Box", "Rc", "Arc", "HashMap" };
+
+        private static readonly string[] GoKeywords = {
+            "break", "case", "chan", "const", "continue", "default", "defer", "else", "fallthrough",
+            "for", "func", "go", "goto", "if", "import", "interface", "map", "package", "range",
+            "return", "select", "struct", "switch", "type", "var", "true", "false", "nil", "iota" };
+
+        private static readonly string[] GoTypes = {
+            "bool", "byte", "complex64", "complex128", "error", "float32", "float64", "int", "int8",
+            "int16", "int32", "int64", "rune", "string", "uint", "uint8", "uint16", "uint32", "uint64",
+            "uintptr", "any", "append", "cap", "close", "copy", "delete", "len", "make", "new", "panic",
+            "print", "println", "recover" };
+
+        private static readonly string[] PascalKeywords = {
+            "and", "array", "as", "asm", "begin", "case", "class", "const", "constructor", "destructor",
+            "div", "do", "downto", "else", "end", "except", "exports", "file", "finalization",
+            "finally", "for", "function", "goto", "if", "implementation", "in", "inherited",
+            "initialization", "inline", "interface", "is", "label", "library", "mod", "nil", "not",
+            "object", "of", "on", "or", "out", "packed", "procedure", "program", "property", "raise",
+            "record", "repeat", "resourcestring", "set", "shl", "shr", "string", "then", "threadvar",
+            "to", "try", "type", "unit", "until", "uses", "var", "while", "with", "xor", "true",
+            "false", "self", "result", "exit", "override", "virtual", "abstract", "private",
+            "protected", "public", "published", "overload", "reintroduce", "generic", "specialize" };
+
+        private static readonly string[] PascalTypes = {
+            "integer", "cardinal", "shortint", "smallint", "longint", "int64", "byte", "word",
+            "longword", "qword", "boolean", "char", "widechar", "ansichar", "real", "single", "double",
+            "extended", "currency", "pointer", "ansistring", "widestring", "unicodestring", "variant",
+            "tobject", "tstringlist", "text" };
+
         private ClassSyntax(Lang lang)
         {
             this.lang = lang;
@@ -106,11 +159,41 @@ namespace GitForce
                     types = new HashSet<string>(CTypes);
                     types.UnionWith(CppTypes);
                     break;
+                case Lang.Java:
+                    keywords = new HashSet<string>(JavaKeywords);
+                    types = new HashSet<string>(JavaTypes);
+                    break;
+                case Lang.Rust:
+                    keywords = new HashSet<string>(RustKeywords);
+                    types = new HashSet<string>(RustTypes);
+                    break;
+                case Lang.Go:
+                    keywords = new HashSet<string>(GoKeywords);
+                    types = new HashSet<string>(GoTypes);
+                    break;
+                case Lang.Pascal:
+                    // Pascal ignores the case of the keywords and identifiers
+                    keywords = new HashSet<string>(PascalKeywords, StringComparer.OrdinalIgnoreCase);
+                    types = new HashSet<string>(PascalTypes, StringComparer.OrdinalIgnoreCase);
+                    break;
                 default:
                     keywords = new HashSet<string>(PythonKeywords);
                     types = new HashSet<string>(PythonTypes);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Languages with // line comments, and with /* */ block comments
+        /// </summary>
+        private bool SlashComments
+        {
+            get { return lang != Lang.Python; }
+        }
+
+        private bool BlockComments
+        {
+            get { return lang != Lang.Python && lang != Lang.Pascal; }
         }
 
         /// <summary>
@@ -129,6 +212,14 @@ namespace GitForce
                     return new ClassSyntax(Lang.Cpp);
                 case ".py": case ".pyw": case ".pyi":
                     return new ClassSyntax(Lang.Python);
+                case ".java":
+                    return new ClassSyntax(Lang.Java);
+                case ".rs":
+                    return new ClassSyntax(Lang.Rust);
+                case ".go":
+                    return new ClassSyntax(Lang.Go);
+                case ".pas": case ".pp": case ".dpr": case ".lpr": case ".dpk":
+                    return new ClassSyntax(Lang.Pascal);
             }
             return null;
         }
@@ -157,7 +248,8 @@ namespace GitForce
             if (state != State.Normal)
             {
                 int end = FindEnd(line, 0, state);
-                tokens.Add(new Token { Start = 0, Length = (end < 0 ? n : end), Kind = state == State.BlockComment ? Kind.Comment : Kind.String });
+                bool comment = state == State.BlockComment || state == State.BraceComment || state == State.ParenComment;
+                tokens.Add(new Token { Start = 0, Length = (end < 0 ? n : end), Kind = comment ? Kind.Comment : Kind.String });
                 if (end < 0)
                     return tokens;
                 i = end;
@@ -165,7 +257,7 @@ namespace GitForce
             }
 
             // C family preprocessor line (C# directives as well)
-            if (lang != Lang.Python && i == 0)
+            if ((lang == Lang.C || lang == Lang.Cpp || lang == Lang.CSharp) && i == 0)
             {
                 int k = 0;
                 while (k < n && char.IsWhiteSpace(line[k])) k++;
@@ -185,12 +277,37 @@ namespace GitForce
                 char c = line[i];
 
                 // Comments
-                if (lang == Lang.Python ? c == '#' : (c == '/' && i + 1 < n && line[i + 1] == '/'))
+                if (lang == Lang.Python ? c == '#' : (SlashComments && c == '/' && i + 1 < n && line[i + 1] == '/'))
                 {
                     tokens.Add(new Token { Start = i, Length = n - i, Kind = Kind.Comment });
                     break;
                 }
-                if (lang != Lang.Python && c == '/' && i + 1 < n && line[i + 1] == '*')
+                if (lang == Lang.Pascal && (c == '{' || (c == '(' && i + 1 < n && line[i + 1] == '*')))
+                {
+                    // { comment } and (* comment *); {$...} is a compiler directive
+                    State block = c == '{' ? State.BraceComment : State.ParenComment;
+                    Kind kind = c == '{' && i + 1 < n && line[i + 1] == '$' ? Kind.Preprocessor : Kind.Comment;
+                    int end = FindEnd(line, i + (c == '{' ? 1 : 2), block);
+                    if (end < 0)
+                    {
+                        tokens.Add(new Token { Start = i, Length = n - i, Kind = kind });
+                        state = block;
+                        break;
+                    }
+                    tokens.Add(new Token { Start = i, Length = end - i, Kind = kind });
+                    i = end;
+                    continue;
+                }
+                if (lang == Lang.Rust && c == '#' && i + 1 < n && (line[i + 1] == '[' || line[i + 1] == '!'))
+                {
+                    // Attribute #[...] or #![...]
+                    int end = line.IndexOf(']', i);
+                    end = end < 0 ? n : end + 1;
+                    tokens.Add(new Token { Start = i, Length = end - i, Kind = Kind.Preprocessor });
+                    i = end;
+                    continue;
+                }
+                if (BlockComments && c == '/' && i + 1 < n && line[i + 1] == '*')
                 {
                     int end = line.IndexOf("*/", i + 2, StringComparison.Ordinal);
                     if (end < 0)
@@ -202,6 +319,22 @@ namespace GitForce
                     tokens.Add(new Token { Start = i, Length = end + 2 - i, Kind = Kind.Comment });
                     i = end + 2;
                     continue;
+                }
+
+                // Rust raw strings: r"...", r#"..."#, br"..."
+                if (lang == Lang.Rust && (c == 'r' || (c == 'b' && i + 1 < n && line[i + 1] == 'r')))
+                {
+                    int k = i + (c == 'b' ? 2 : 1);
+                    int hashes = 0;
+                    while (k < n && line[k] == '#') { k++; hashes++; }
+                    if (k < n && line[k] == '"')
+                    {
+                        int end = line.IndexOf("\"" + new string('#', hashes), k + 1, StringComparison.Ordinal);
+                        end = end < 0 ? n : end + 1 + hashes;
+                        tokens.Add(new Token { Start = i, Length = end - i, Kind = Kind.String });
+                        i = end;
+                        continue;
+                    }
                 }
 
                 // Strings
@@ -220,13 +353,33 @@ namespace GitForce
                         }
                     }
                     else
-                        end = FindQuote(line, i, quote);
+                        end = lang == Lang.Pascal ? FindPascalQuote(line, i) : FindQuote(line, i, quote);
                     tokens.Add(new Token { Start = stringStart, Length = end - stringStart, Kind = Kind.String });
                     i = end;
                     continue;
                 }
 
-                // Numbers
+                // Rust lifetime: 'a (a quote that does not open a character literal)
+                if (lang == Lang.Rust && c == '\'' && i + 1 < n && (char.IsLetter(line[i + 1]) || line[i + 1] == '_'))
+                {
+                    int start = i;
+                    i++;
+                    while (i < n && (char.IsLetterOrDigit(line[i]) || line[i] == '_'))
+                        i++;
+                    tokens.Add(new Token { Start = start, Length = i - start, Kind = Kind.Type });
+                    continue;
+                }
+
+                // Numbers, with the Pascal hexadecimal $FF and character codes #13
+                if (lang == Lang.Pascal && (c == '$' || c == '#') && i + 1 < n && Uri.IsHexDigit(line[i + 1]))
+                {
+                    int start = i;
+                    i++;
+                    while (i < n && (c == '$' ? Uri.IsHexDigit(line[i]) : char.IsDigit(line[i])))
+                        i++;
+                    tokens.Add(new Token { Start = start, Length = i - start, Kind = Kind.Number });
+                    continue;
+                }
                 if (char.IsDigit(c) || (c == '.' && i + 1 < n && char.IsDigit(line[i + 1])))
                 {
                     int start = i;
@@ -248,8 +401,13 @@ namespace GitForce
                         tokens.Add(new Token { Start = start, Length = i - start, Kind = Kind.Keyword });
                     else if (types.Contains(word))
                         tokens.Add(new Token { Start = start, Length = i - start, Kind = Kind.Type });
-                    else if (lang == Lang.Python && start > 0 && line[start - 1] == '@')
-                        tokens.Add(new Token { Start = start - 1, Length = i - start + 1, Kind = Kind.Preprocessor });  // Decorator
+                    else if ((lang == Lang.Python || lang == Lang.Java) && start > 0 && line[start - 1] == '@')
+                        tokens.Add(new Token { Start = start - 1, Length = i - start + 1, Kind = Kind.Preprocessor });  // Decorator, annotation
+                    else if (lang == Lang.Rust && i < n && line[i] == '!' && (i + 1 >= n || line[i + 1] != '='))
+                    {
+                        tokens.Add(new Token { Start = start, Length = i + 1 - start, Kind = Kind.Preprocessor });     // Macro: println!
+                        i++;
+                    }
                     continue;
                 }
                 i++;
@@ -285,7 +443,37 @@ namespace GitForce
                 return true;
             }
 
-            if (lang == Lang.CSharp)
+            if (lang == Lang.Java && k + 2 < n && line[k] == '"' && line[k + 1] == '"' && line[k + 2] == '"')
+            {
+                // Text block """ ... """
+                multi = State.TripleDouble;
+                i = k + 3;
+                return true;
+            }
+            if (lang == Lang.Go && line[k] == '`')
+            {
+                // Raw string `...`, which can span lines
+                multi = State.BacktickString;
+                i = k + 1;
+                return true;
+            }
+            if (lang == Lang.Pascal)
+            {
+                if (line[k] != '\'')
+                    return false;
+                quote = '\'';
+                i = k + 1;
+                return true;
+            }
+            if (lang == Lang.Rust)
+            {
+                // Byte strings b"..." and b'x'; a quote that opens no character literal is a lifetime
+                if (line[k] == 'b' && k + 1 < n && (line[k + 1] == '"' || line[k + 1] == '\''))
+                    k++;
+                if (line[k] == '\'' && !((k + 1 < n && line[k + 1] == '\\') || (k + 2 < n && line[k + 2] == '\'')))
+                    return false;
+            }
+            else if (lang == Lang.CSharp)
             {
                 // Raw string literal """...""" (possibly with $), verbatim @"..." / $@"..." / @$"..."
                 while (k < n && k - i < 2 && (line[k] == '$' || line[k] == '@')) k++;
@@ -310,7 +498,7 @@ namespace GitForce
                 }
                 k = i;
             }
-            else
+            else if (lang == Lang.C || lang == Lang.Cpp)
             {
                 // C/C++ prefixes: L, u, U, u8, R; a prefix not followed by a quote is an identifier
                 while (k < n && k - i < 3 && "LuU8R".IndexOf(line[k]) >= 0) k++;
@@ -345,6 +533,27 @@ namespace GitForce
         }
 
         /// <summary>
+        /// Returns the position after the closing quote of a Pascal string, where a doubled quote
+        /// stands for one quote (or the line end)
+        /// </summary>
+        private static int FindPascalQuote(string line, int i)
+        {
+            while (i < line.Length)
+            {
+                if (line[i] == '\'')
+                {
+                    if (i + 1 < line.Length && line[i + 1] == '\'')
+                        i += 2;
+                    else
+                        return i + 1;
+                }
+                else
+                    i++;
+            }
+            return line.Length;
+        }
+
+        /// <summary>
         /// Returns the position after the end of a multi-line construct, or -1 if it does not end on this line
         /// </summary>
         private static int FindEnd(string line, int i, State state)
@@ -355,6 +564,14 @@ namespace GitForce
                 {
                     int end = line.IndexOf("*/", i, StringComparison.Ordinal);
                     return end < 0 ? -1 : end + 2;
+                }
+                case State.BacktickString:
+                case State.BraceComment:
+                case State.ParenComment:
+                {
+                    string close = state == State.BacktickString ? "`" : state == State.BraceComment ? "}" : "*)";
+                    int end = line.IndexOf(close, i, StringComparison.Ordinal);
+                    return end < 0 ? -1 : end + close.Length;
                 }
                 case State.VerbatimString:
                     while (i < line.Length)

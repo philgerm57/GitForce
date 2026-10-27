@@ -57,9 +57,9 @@ namespace GitForce
         private readonly TabPage logPage = new TabPage("Log") { Name = "Log", Tag = "Log", ToolTipText = "Log of the git commands (F12)" };
         private readonly ListView listCommitFiles = new ListView();
         private readonly Label labelCommit = new Label();
-        private readonly Timer commitTimer = new Timer { Interval = 120 };
+        private readonly Timer commitTimer = new Timer { Interval = 40 };
         private string commitPending, commitPendingStash;
-        private string commitSha, commitParent;
+        private string commitSha, commitParent, commitStash;
         private readonly ContextMenuStrip commitFilesMenu = new ContextMenuStrip();
 
         private static readonly Dictionary<string, UserControl> PanelsR = new Dictionary<string, UserControl> {
@@ -1107,82 +1107,200 @@ namespace GitForce
         /// </summary>
         public void ShowCommitFiles(string sha, string stash = null)
         {
+            // A click selects the commit on the mouse press and clicks it on the release: both
+            // ask for the same commit, which is loaded only once
+            string key = CommitKey(sha, stash);
+            if (key == (commitTimer.Enabled ? CommitKey(commitPending, commitPendingStash) : commitShown))
+                return;
             commitPending = sha;
             commitPendingStash = stash;
             commitTimer.Stop();
             commitTimer.Start();
         }
 
+        /// <summary>
+        /// The commit (or stash) listed at the right of the log, in the repository it belongs to
+        /// </summary>
+        private string commitShown;
+
+        private static string CommitKey(string sha, string stash)
+        {
+            return (App.Repos?.Current?.Path ?? string.Empty) + "|" + sha + "|" + stash;
+        }
+
+        /// <summary>
+        /// What the right of the log shows for a commit, read with a single git command
+        /// </summary>
+        private class CommitDetails
+        {
+            public string Key, Sha, Parent, Stash, Error;
+            public string[] Header;                     // Fields of the --format below
+            public readonly List<string[]> Files = new List<string[]>();
+            public int Added, Deleted;
+        }
+
+        /// <summary>
+        /// Commits already read: they never change, only their branches and tags do, so the
+        /// cache is emptied when GitForce refreshes
+        /// </summary>
+        private readonly Dictionary<string, CommitDetails> commitCache = new Dictionary<string, CommitDetails>();
+
+        /// <summary>
+        /// Number of the last load started; an older load that ends later is ignored
+        /// </summary>
+        private int commitLoadId;
+
         private void LoadCommitFiles()
         {
             commitTimer.Stop();
+            string key = CommitKey(commitPending, commitPendingStash);
+            commitShown = key;
             ClassRepo repo = App.Repos.Current;
+            if (repo == null || string.IsNullOrEmpty(commitPending))
+            {
+                ShowCommitDetails(null);
+                return;
+            }
+            CommitDetails cached;
+            if (commitCache.TryGetValue(key, out cached))
+            {
+                ShowCommitDetails(cached);
+                return;
+            }
+
+            // Read the commit away from the UI thread, so that the window stays responsive
+            int id = ++commitLoadId;
+            string dir = repo.Path, sha = commitPending, stash = commitPendingStash;
+            labelCommit.Text = "Loading...";
+            System.Threading.Tasks.Task.Run(() => ReadCommit(dir, sha, stash, key)).ContinueWith(t =>
+            {
+                if (IsDisposed || t.IsFaulted || id != commitLoadId)
+                    return;
+                BeginInvoke((Action)(() =>
+                {
+                    if (id != commitLoadId)
+                        return;
+                    if (commitCache.Count > 500)
+                        commitCache.Clear();
+                    commitCache[key] = t.Result;
+                    ShowCommitDetails(t.Result);
+                }));
+            });
+        }
+
+        /// <summary>
+        /// Read everything about a commit: its header, its message and its files with their changes
+        /// (against the first parent), in one git command. Runs on a worker thread.
+        /// </summary>
+        private static CommitDetails ReadCommit(string dir, string sha, string stash, string key)
+        {
+            CommitDetails d = new CommitDetails { Key = key, Stash = stash };
+            int code;
+            string output = Encoding.UTF8.GetString(DiffViewControl.RunGitBytes(dir,
+                "show -z -M --diff-merges=first-parent --raw --numstat --decorate=short " +
+                "--format=%H%x1f%an%x1f%ae%x1f%at%x1f%cn%x1f%ce%x1f%ct%x1f%P%x1f%D%x1f%B%x1e \"" + sha + "\"", out code));
+            int headerEnd = output.IndexOf('\x1e');
+            if (code != 0 || headerEnd < 0)
+            {
+                d.Error = "Unknown commit " + sha;
+                return d;
+            }
+            d.Header = output.Substring(0, headerEnd).Split(new[] { '\x1f' }, 10);
+            if (d.Header.Length < 10)
+            {
+                d.Error = "Unknown commit " + sha;
+                return d;
+            }
+            d.Sha = d.Header[0].Trim();
+            string[] parents = d.Header[7].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            d.Parent = parents.Length > 0 ? parents[0] : string.Empty;
+
+            // The raw entries (":modes ids STATUS", then one path, or two for a rename or a copy),
+            // then the numstat entries ("added<TAB>deleted<TAB>path", the path empty for a rename
+            // and followed by the two paths)
+            string[] tokens = output.Substring(headerEnd + 1).Split('\0');
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                string t = tokens[i].TrimStart('\n');
+                if (t.StartsWith(":"))
+                {
+                    string status = t.Substring(t.LastIndexOf(' ') + 1);
+                    char kind = status.Length > 0 ? status[0] : 'M';
+                    if ((kind == 'R' || kind == 'C') && i + 2 < tokens.Length)
+                    {
+                        d.Files.Add(new[] { kind.ToString(), tokens[i + 1], tokens[i + 2] });
+                        i += 2;
+                    }
+                    else if (i + 1 < tokens.Length)
+                    {
+                        d.Files.Add(new[] { kind.ToString(), tokens[i + 1], tokens[i + 1] });
+                        i++;
+                    }
+                }
+                else
+                {
+                    string[] num = t.Split('\t');
+                    if (num.Length < 3)
+                        continue;
+                    int added, deleted;
+                    if (int.TryParse(num[0], out added)) d.Added += added;       // "-" for a binary file
+                    if (int.TryParse(num[1], out deleted)) d.Deleted += deleted;
+                    if (num[2].Length == 0)
+                        i += 2;         // Rename: the two paths follow
+                }
+            }
+
+            // The untracked files of a stash are kept in its third parent
+            if (stash != null && parents.Length > 2)
+            {
+                string untracked = DiffViewControl.RunGitRaw(dir, "ls-tree -r -z --name-only " + d.Sha + "^3");
+                foreach (string path in untracked.Split(new[] { '\0' }, StringSplitOptions.RemoveEmptyEntries))
+                    d.Files.Add(new[] { "?", path, path, d.Sha + "^3" });
+            }
+            return d;
+        }
+
+        /// <summary>
+        /// Show the details and the files of a commit at the right of the log (null: nothing)
+        /// </summary>
+        private void ShowCommitDetails(CommitDetails d)
+        {
             listCommitFiles.BeginUpdate();
             listCommitFiles.Items.Clear();
             try
             {
                 textCommitInfo.Clear();
                 btEditMessage.Enabled = btEditAuthor.Enabled = false;
-                if (repo == null || string.IsNullOrEmpty(commitPending))
+                commitSha = commitParent = commitStash = null;
+                if (d == null)
                     return;
-                string dir = repo.Path;
-                commitSha = DiffViewControl.RunGitRaw(dir, "rev-parse --verify -q \"" + commitPending + "^{commit}\"").Trim();
-                commitParent = DiffViewControl.RunGitRaw(dir, "rev-parse --verify -q \"" + commitPending + "^1\"").Trim();
-                if (commitSha.Length == 0)
+                if (d.Error != null)
                 {
-                    labelCommit.Text = "Unknown commit " + commitPending;
+                    labelCommit.Text = d.Error;
                     return;
                 }
-                string subject = DiffViewControl.RunGitRaw(dir, "log -1 --format=%s " + commitSha).Trim();
-                string args = commitParent.Length > 0
-                    ? "diff-tree -r -M -z --name-status " + commitParent + " " + commitSha
-                    : "diff-tree --root --no-commit-id -r -M -z --name-status " + commitSha;
-                string[] tokens = DiffViewControl.RunGitRaw(dir, args).Split(new[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
+                commitSha = d.Sha;
+                commitParent = d.Parent;
+                commitStash = d.Stash;
 
                 bool dark = ClassTheme.IsDark;
-                for (int i = 0; i < tokens.Length; )
+                foreach (string[] file in d.Files)
                 {
-                    string code = tokens[i].Trim();
-                    if (code.Length == 0) { i++; continue; }
-                    char kind = code[0];
-                    string oldPath, path;
-                    if ((kind == 'R' || kind == 'C') && i + 2 < tokens.Length)
-                    {
-                        oldPath = tokens[i + 1];
-                        path = tokens[i + 2];
-                        i += 3;
-                    }
-                    else if (i + 1 < tokens.Length)
-                    {
-                        oldPath = path = tokens[i + 1];
-                        i += 2;
-                    }
-                    else
-                        break;
-                    ListViewItem item = new ListViewItem(kind.ToString());
+                    char kind = file[0][0];
+                    string oldPath = file[1], path = file[2];
+                    ListViewItem item = new ListViewItem(file[0]);
                     item.SubItems.Add(oldPath != path ? oldPath + "  \u2192  " + path : path);
-                    item.Tag = new[] { kind.ToString(), oldPath, path };
-                    item.ToolTipText = kind == 'A' ? "Added" : kind == 'D' ? "Deleted" : kind == 'R' ? "Renamed" : kind == 'C' ? "Copied" : "Modified";
+                    item.Tag = file;
+                    item.ToolTipText = kind == '?' ? "Untracked file saved in the stash" : kind == 'A' ? "Added" : kind == 'D' ? "Deleted" :
+                                       kind == 'R' ? "Renamed" : kind == 'C' ? "Copied" : "Modified";
                     item.UseItemStyleForSubItems = true;
                     if (kind == 'A') item.ForeColor = dark ? Color.FromArgb(110, 200, 120) : Color.FromArgb(0, 128, 0);
                     else if (kind == 'D') item.ForeColor = dark ? Color.FromArgb(240, 110, 110) : Color.FromArgb(190, 0, 0);
                     else if (kind == 'R' || kind == 'C') item.ForeColor = dark ? Color.FromArgb(110, 160, 240) : Color.FromArgb(0, 80, 190);
                     listCommitFiles.Items.Add(item);
                 }
-                if (commitPendingStash != null)
-                {
-                    // The untracked files of a stash are kept in its third parent
-                    string untracked = DiffViewControl.RunGitRaw(dir, "ls-tree -r -z --name-only " + commitSha + "^3");
-                    foreach (string path in untracked.Split(new[] { '\0' }, StringSplitOptions.RemoveEmptyEntries))
-                    {
-                        ListViewItem item = new ListViewItem("?") { ToolTipText = "Untracked file saved in the stash" };
-                        item.SubItems.Add(path);
-                        item.Tag = new[] { "?", path, path, commitSha + "^3" };
-                        listCommitFiles.Items.Add(item);
-                    }
-                }
-                labelCommit.Text = listCommitFiles.Items.Count + " file(s)" + (commitPendingStash != null ? " in " + commitPendingStash : string.Empty);
-                ShowCommitInfo(dir);
+                labelCommit.Text = listCommitFiles.Items.Count + " file(s)" + (d.Stash != null ? " in " + d.Stash : string.Empty);
+                ShowCommitInfo(d);
             }
             catch (Exception ex)
             {
@@ -1198,17 +1316,18 @@ namespace GitForce
         /// Details of the listed commit: SHA, author, date, committer, parents, branches and tags,
         /// changes, and the whole message
         /// </summary>
-        private void ShowCommitInfo(string dir)
+        private void ShowCommitInfo(CommitDetails d)
         {
-            string[] f = DiffViewControl.RunGitRaw(dir, "show -s --decorate=short --format=%H%x1f%an%x1f%ae%x1f%at%x1f%cn%x1f%ce%x1f%ct%x1f%P%x1f%D%x1f%B " + commitSha).Split(new[] { '\x1f' }, 10);
-            if (f.Length < 10)
-                return;
+            string[] f = d.Header;
+            string commitPendingStash = d.Stash;
             Func<string, DateTime> date = unix =>
             {
                 long t;
                 return long.TryParse(unix.Trim(), out t) ? DateTimeOffset.FromUnixTimeSeconds(t).LocalDateTime : DateTime.MinValue;
             };
-            string stat = commitParent.Length > 0 ? DiffViewControl.RunGitRaw(dir, "diff --shortstat " + commitParent + " " + commitSha).Trim() : string.Empty;
+            int changed = d.Files.Count(x => x[0] != "?");
+            string stat = changed == 0 ? string.Empty : string.Format("{0} file{1} changed, {2} insertion{3}(+), {4} deletion{5}(-)",
+                changed, changed > 1 ? "s" : "", d.Added, d.Added != 1 ? "s" : "", d.Deleted, d.Deleted != 1 ? "s" : "");
 
             Color label = Color.Gray;
             Font bold = new Font(textCommitInfo.Font, FontStyle.Bold);
@@ -1373,7 +1492,7 @@ namespace GitForce
         private void ApplyCommitFilePatch(string[] f, bool reverse)
         {
             ClassRepo repo = App.Repos.Current;
-            string what = (reverse ? "Revert" : "Cherry pick") + " the changes of " + (commitPendingStash ?? commitSha.Substring(0, 7)) + " to " + f[2];
+            string what = (reverse ? "Revert" : "Cherry pick") + " the changes of " + (commitStash ?? commitSha.Substring(0, 7)) + " to " + f[2];
             if (MessageBox.Show(what + " in your working copy?", reverse ? "Revert File" : "Cherry Pick File",
                     MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
                 return;
@@ -1633,6 +1752,10 @@ namespace GitForce
             UpdateWorkTreeWatcher();
             System.Threading.Interlocked.Exchange(ref ignoreIndexUntil, DateTime.UtcNow.AddSeconds(2).Ticks);
 
+            // Branches and tags may have moved: a click on the listed commit loads it again
+            commitShown = null;
+            commitCache.Clear();
+
             // The selected file may have changed (commit, revert, edit...): show it again
             if (diffFile != null)
                 ShowFileDiff(diffFile);
@@ -1740,6 +1863,7 @@ namespace GitForce
         {
             FormSettings frmOptions = new FormSettings();
             frmOptions.ShowDialog();
+            DiffView.ApplyCodeFont();
         }
 
         /// <summary>

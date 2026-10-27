@@ -41,6 +41,14 @@ namespace GitForce
             void C(string text, string description, bool danger = false) =>
                 g.Commands.Add(new Command { Text = text, Description = description, Danger = danger });
 
+            G("Création et clonage");
+            C("init", "Crée un dépôt git vide dans le dossier courant.");
+            C("init <dossier>", "Crée un dépôt git vide dans un autre dossier (chemin complet, ex. C:\\Projets\\nom).");
+            C("clone <url> <dossier>", "Copie un dépôt distant dans un nouveau dossier (chemin complet, ex. C:\\Projets\\nom).");
+            C("clone --depth 1 <url> <dossier>", "Copie seulement le dernier commit : plus rapide, sans l'historique.");
+            C("clone -b <branche> <url> <dossier>", "Copie un dépôt en extrayant directement une branche donnée.");
+            C("clone --recurse-submodules <url> <dossier>", "Copie un dépôt avec tous ses sous-modules.");
+
             G("État et inspection");
             C("status", "État de la copie de travail : fichiers modifiés, indexés et non suivis.");
             C("status -s -b", "État en version courte, avec la branche courante et son avance/retard.");
@@ -60,6 +68,7 @@ namespace GitForce
             C("add <fichier>", "Ajoute le fichier à l'index pour le prochain commit.");
             C("add -A", "Indexe toutes les modifications : ajouts, modifications et suppressions.");
             C("add -u", "Indexe les modifications et suppressions des fichiers déjà suivis seulement.");
+            C("stage <fichier>", "Synonyme de git add : ajoute le fichier à l'index.");
             C("restore --staged <fichier>", "Retire le fichier de l'index sans toucher à son contenu.");
             C("restore <fichier>", "Annule les modifications non indexées du fichier (perdues définitivement).", true);
             C("rm --cached <fichier>", "Arrête le suivi du fichier en le gardant sur le disque.");
@@ -90,6 +99,8 @@ namespace GitForce
             C("branch -a -vv", "Toutes les branches, locales et distantes, avec leur dernier commit et leur suivi.");
             C("switch <branche>", "Passe sur une autre branche.");
             C("switch -c <nouvelle-branche>", "Crée une branche à partir du commit courant et passe dessus.");
+            C("checkout <branche>", "Ancienne forme de switch : passe sur une autre branche.");
+            C("checkout -b <nouvelle-branche>", "Ancienne forme de switch -c : crée une branche et passe dessus.");
             C("branch -m <ancien> <nouveau>", "Renomme une branche.");
             C("branch -d <branche>", "Supprime une branche déjà fusionnée.");
             C("branch -D <branche>", "Supprime une branche même si elle n'est pas fusionnée.", true);
@@ -99,6 +110,9 @@ namespace GitForce
             C("rebase <branche>", "Rejoue les commits de la branche courante au-dessus d'une autre (réécrit l'historique).", true);
             C("rebase --continue", "Reprend un rebase après la résolution des conflits.");
             C("rebase --abort", "Abandonne un rebase en cours.");
+            C("config rerere.enabled true", "Active rerere : git mémorise vos résolutions de conflits et les réapplique d'elles-mêmes.");
+            C("rerere status", "Fichiers dont rerere a enregistré la résolution pendant la fusion en cours.");
+            C("rerere diff", "Résolution en cours de chaque conflit, telle que rerere va l'enregistrer.");
 
             G("Dépôts distants");
             C("remote -v", "Liste des dépôts distants avec leurs adresses.");
@@ -137,6 +151,36 @@ namespace GitForce
             C("clean -n -d", "Montre les fichiers non suivis que clean supprimerait (sans rien supprimer).");
             C("clean -f -d", "Supprime les fichiers et dossiers non suivis.", true);
 
+            G("Réécrire l'historique (avancé)");
+            C("filter-branch --index-filter \"git rm --cached --ignore-unmatch <fichier>\" -- --all",
+              "Retire un fichier de tout l'historique (ancienne méthode, lente). Tous les identifiants de commits changent.", true);
+            C("filter-repo --path <fichier> --invert-paths",
+              "Retire un fichier de tout l'historique : remplaçant recommandé de filter-branch, à installer à part (pip install git-filter-repo).", true);
+            C("filter-repo --mailmap <fichier-mailmap>", "Réécrit les noms et e-mails des auteurs dans tout l'historique (outil à installer à part).", true);
+
+            G("Sous-modules, worktrees et sparse-checkout");
+            C("submodule add <url> <chemin>", "Ajoute un autre dépôt comme sous-dossier (sous-module).");
+            C("submodule update --init --recursive", "Récupère et extrait tous les sous-modules, par exemple après un clone.");
+            C("submodule status", "Commit extrait de chaque sous-module.");
+            C("submodule foreach git pull", "Met à jour chaque sous-module depuis son dépôt distant.");
+            C("worktree list", "Liste des copies de travail liées à ce dépôt.");
+            C("worktree add <dossier> <branche>", "Extrait une branche dans un autre dossier, pour travailler sur deux branches à la fois.");
+            C("worktree remove <dossier>", "Supprime une copie de travail liée (si elle n'a pas de modifications).");
+            C("worktree prune", "Oublie les copies de travail liées dont le dossier a été supprimé.");
+            C("sparse-checkout set <dossier1> <dossier2>", "N'extrait que ces dossiers : utile pour un très gros dépôt.");
+            C("sparse-checkout list", "Dossiers extraits par sparse-checkout.");
+            C("sparse-checkout disable", "Extrait de nouveau tout le dépôt.");
+
+            G("Trouver un bug (bisect)");
+            C("bisect start", "Commence la recherche du commit qui a introduit un bug, par dichotomie.");
+            C("bisect bad", "Le commit courant a le bug (à indiquer au début, puis à chaque étape).");
+            C("bisect good <commit>", "Un commit sans le bug (une version qui fonctionnait) ; git extrait alors un commit à tester au milieu.");
+            C("bisect good", "Le commit extrait fonctionne : git passe au commit suivant à tester.");
+            C("bisect skip", "Le commit extrait ne peut pas être testé (ne compile pas…) : git en choisit un autre.");
+            C("bisect run <commande>", "Automatise la recherche : la commande (un test) renvoie 0 si le commit est bon, autre chose s'il est mauvais.");
+            C("bisect log", "Les réponses données jusqu'ici.");
+            C("bisect reset", "Termine la recherche et revient à la branche de départ.");
+
             G("Configuration");
             C("config --global user.name \"<nom>\"", "Nom d'auteur utilisé dans vos commits.");
             C("config --global user.email \"<email>\"", "Adresse e-mail utilisée dans vos commits.");
@@ -151,6 +195,9 @@ namespace GitForce
             C("gc", "Compacte le dépôt et supprime les objets inutiles.");
             C("rev-parse HEAD", "SHA complet du commit courant.");
             C("rev-parse --show-toplevel", "Dossier racine du dépôt.");
+            C("archive --format=zip -o <fichier.zip> HEAD", "Crée une archive zip des fichiers du dernier commit (sans le dossier .git).");
+            C("help <commande>", "Ouvre la documentation complète d'une commande git dans le navigateur.");
+            C("help -a", "Liste de toutes les commandes git disponibles.");
             return list;
         }
 
@@ -699,7 +746,7 @@ namespace GitForce
             return Regex.IsMatch(args,
                 @"^(reset\b.*--hard|clean\b(?!.*(-n|--dry-run)\b)|push\b.*(--force|\s-f\b|--delete|\s-d\b|\s:)|branch\b.*\s-D\b|" +
                 @"stash\s+(drop|clear)\b|restore\b(?!.*--staged)|checkout\b.*\s--\s|rebase\b(?!.*--(abort|continue))|" +
-                @"commit\b.*--amend|rm\b(?!.*--cached)|filter-branch\b|update-ref\b.*-d\b|tag\b.*\s-d\b)");
+                @"commit\b.*--amend|rm\b(?!.*--cached)|filter-(branch|repo)\b|update-ref\b.*-d\b|tag\b.*\s-d\b)");
         }
 
         /// <summary>
@@ -711,7 +758,8 @@ namespace GitForce
             if (new[] { "status", "diff", "show", "log", "blame", "ls-files", "check-ignore", "grep", "shortlog", "reflog",
                         "describe", "rev-parse", "fsck", "count-objects", "--version", "help", "ls-remote", "cat-file" }.Contains(verb))
                 return true;
-            return Regex.IsMatch(args, @"^(stash\s+(list|show)|remote\s*(-v)?$|branch\s*(-a|-r|-v|-vv|\s)*$|tag\s*$|config\b.*(--list|--get))");
+            return Regex.IsMatch(args, @"^(stash\s+(list|show)|bisect\s+(log|visualize|view)|rerere\s+(status|diff)|archive\b|" +
+                @"submodule\s+status|worktree\s+list|sparse-checkout\s+list|remote\s*(-v)?$|branch\s*(-a|-r|-v|-vv|\s)*$|tag\s*$|config\b.*(--list|--get))");
         }
     }
 }

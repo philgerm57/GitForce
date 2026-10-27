@@ -687,6 +687,22 @@ namespace GitForce.Main.Right.Panels
             contextMenu.Items.Add(new ToolStripSeparator());
             contextMenu.Items.Add(new ToolStripMenuItem("New Branch Here...", null, (s, a) => ClassHistoryEdit.NewBranchAt(repo, r.Sha)));
             contextMenu.Items.Add(new ToolStripMenuItem("New Tag Here...", null, (s, a) => ClassHistoryEdit.NewTag(repo, r.Sha)));
+            contextMenu.Items.Add(new ToolStripSeparator());
+            contextMenu.Items.Add(new ToolStripMenuItem("Cherry-Pick...", null, (s, a) => FormCherryPick.CherryPick(repo, r.Sha, r.Subject))
+                { Enabled = !r.IsHead });
+            contextMenu.Items.Add(new ToolStripMenuItem("Reset...", null, (s, a) =>
+            {
+                // The quick reset: soft, mixed or hard
+                FormReset formReset = new FormReset();
+                if (formReset.ShowDialog() == DialogResult.OK)
+                {
+                    ExecResult res = repo.RunCmd("reset " + formReset.Cmd + " " + r.Sha);
+                    if (!res.Success())
+                        MessageBox.Show(res.stderr.Trim(), "Reset", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    App.DoRefresh();
+                }
+            }));
+            contextMenu.Items.Add(new ToolStripMenuItem("Reset Advanced...", null, (s, a) => FormResetAdvanced.ResetTo(repo, r.Sha, r.Subject)));
 
             // One submenu for each branch and tag on this commit
             string current = repo.Run("rev-parse --abbrev-ref HEAD").stdout.Trim();

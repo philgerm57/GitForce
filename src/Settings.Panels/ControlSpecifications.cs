@@ -13,6 +13,22 @@ namespace GitForce.Settings.Panels
         public ControlSpecifications()
         {
             InitializeComponent();
+
+            // What the maximum lengths do, and when the font is used
+            Label note = new Label
+            {
+                ForeColor = SystemColors.GrayText,
+                Text = "The commit window shows the lengths of the message and turns it red beyond these limits; " +
+                       "the text is not wrapped. The diff panel uses the new font at once, the other windows when they open."
+            };
+            Controls.Add(note);
+            // Under the lengths, whatever the scale of the page
+            Layout += (s, e) =>
+            {
+                int width = Math.Max(100, ClientSize.Width - label7.Left - 3);
+                note.SetBounds(label7.Left, numWrap2.Bottom + 10, width,
+                    TextRenderer.MeasureText(note.Text, note.Font, new Size(width, int.MaxValue), TextFormatFlags.WordBreak).Height + 4);
+            };
         }
 
         /// <summary>
@@ -22,6 +38,10 @@ namespace GitForce.Settings.Panels
         public void Init(string[] options)
         {
             font = Properties.Settings.Default.commitFont;
+
+            // Load the lengths now: Apply and OK store them even if this page was never opened
+            numWrap1.Value = Math.Max(numWrap1.Minimum, Math.Min(numWrap1.Maximum, Properties.Settings.Default.commitW1));
+            numWrap2.Value = Math.Max(numWrap2.Minimum, Math.Min(numWrap2.Maximum, Properties.Settings.Default.commitW2));
         }
 
         /// <summary>
@@ -97,10 +117,6 @@ namespace GitForce.Settings.Panels
                 if (size == (int)font.Size)
                     listSizes.SelectedIndex = listSizes.Items.Count - 1;
             }
-
-            // Set the wrap around columns
-            numWrap1.Value = Properties.Settings.Default.commitW1;
-            numWrap2.Value = Properties.Settings.Default.commitW2;
 
             labelSample.Font = font;
         }
