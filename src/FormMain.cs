@@ -1344,9 +1344,9 @@ namespace GitForce
             textCommitInfo.Clear();
             row(commitPendingStash != null ? "Stash" : "Commit", (commitPendingStash != null ? commitPendingStash + "  " : string.Empty) + f[0]);
             row("Author", f[1] + " <" + f[2] + ">");
-            row("Date", date(f[3]).ToString("f"));
+            row("Date", ClassUtils.FormatLongDate(date(f[3])));
             if (f[4] != f[1] || f[5] != f[2])
-                row("Committer", f[4] + " <" + f[5] + ">  " + date(f[6]).ToString("g"));
+                row("Committer", f[4] + " <" + f[5] + ">  " + ClassUtils.FormatDate(date(f[6])));
             row("Parents", string.Join("  ", f[7].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Substring(0, Math.Min(10, p.Length)))));
             if (commitPendingStash == null)
                 row("Refs", f[8].Trim());
@@ -1861,9 +1861,18 @@ namespace GitForce
         /// </summary>
         private void MenuOptions(object sender, EventArgs e)
         {
+            string dateFormat = Properties.Settings.Default.DateFormat;
             FormSettings frmOptions = new FormSettings();
             frmOptions.ShowDialog();
             DiffView.ApplyCodeFont();
+
+            // Show the dates again in their new format
+            if (dateFormat != Properties.Settings.Default.DateFormat)
+            {
+                App.DoRefresh();
+                if (!string.IsNullOrEmpty(commitSha))
+                    ShowCommitFiles(commitSha, commitStash);
+            }
         }
 
         /// <summary>

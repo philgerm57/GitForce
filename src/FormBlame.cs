@@ -87,7 +87,7 @@ namespace GitForce
                 if (e.RowIndex >= 0 && e.RowIndex < lines.Count && e.ColumnIndex < 3)
                 {
                     Line l = lines[e.RowIndex];
-                    e.ToolTipText = l.Sha.Substring(0, 10) + "  " + l.Author + "  " + l.Date.ToString("g") + Environment.NewLine + l.Summary;
+                    e.ToolTipText = l.Sha.Substring(0, 10) + "  " + l.Author + "  " + ClassUtils.FormatDate(l.Date) + Environment.NewLine + l.Summary;
                 }
             };
 
@@ -195,7 +195,7 @@ namespace GitForce
             {
                 case 0: e.Value = l.FirstOfGroup ? (l.Sha.Trim('0').Length == 0 ? "(local)" : l.Sha.Substring(0, 7)) : string.Empty; break;
                 case 1: e.Value = l.FirstOfGroup ? l.Author : string.Empty; break;
-                case 2: e.Value = l.FirstOfGroup ? l.Date.ToString("d", CultureInfo.CurrentCulture) : string.Empty; break;
+                case 2: e.Value = l.FirstOfGroup ? ClassUtils.FormatDate(l.Date) : string.Empty; break;
                 case 3: e.Value = l.Number.ToString(); break;
                 case 4: e.Value = l.Text; break;
             }

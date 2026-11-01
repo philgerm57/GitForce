@@ -13,7 +13,7 @@ namespace GitForce
         /// <summary>
         /// Specifies only the SHA1 filter string
         /// </summary>
-        public string filterSha => checkBoxSha.Checked ? textBoxSha.Text.Trim() : "";
+        public string filterSha => checkBoxSha.Checked ? textBoxSha.Text.Trim().TrimEnd('*').ToLowerInvariant() : "";
 
         public FormChangelistFilter()
         {

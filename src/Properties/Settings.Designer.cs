@@ -68,6 +68,20 @@ namespace GitForce.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Configuration.SettingsProviderAttribute(typeof(GitForce.PortableSettingsProvider))]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("dd MMM yyyy")]
+        [global::System.Configuration.SettingsManageabilityAttribute(global::System.Configuration.SettingsManageability.Roaming)]
+        public string DateFormat {
+            get {
+                return ((string)(this["DateFormat"]));
+            }
+            set {
+                this["DateFormat"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Configuration.SettingsProviderAttribute(typeof(GitForce.PortableSettingsProvider))]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("True")]
         [global::System.Configuration.SettingsManageabilityAttribute(global::System.Configuration.SettingsManageability.Roaming)]
         public bool ModernIcons {

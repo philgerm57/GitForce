@@ -36,6 +36,8 @@
             this.labelTheme = new System.Windows.Forms.Label();
             this.comboBoxTheme = new System.Windows.Forms.ComboBox();
             this.labelThemeNote = new System.Windows.Forms.Label();
+            this.labelDateFormat = new System.Windows.Forms.Label();
+            this.comboBoxDateFormat = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // checkBoxTabs
@@ -119,6 +121,24 @@
             this.labelThemeNote.TabIndex = 7;
             this.labelThemeNote.Text = "A new theme applies after GitForce is restarted.";
             //
+            // labelDateFormat
+            //
+            this.labelDateFormat.AutoSize = true;
+            this.labelDateFormat.Location = new System.Drawing.Point(3, 182);
+            this.labelDateFormat.Name = "labelDateFormat";
+            this.labelDateFormat.Size = new System.Drawing.Size(65, 13);
+            this.labelDateFormat.TabIndex = 8;
+            this.labelDateFormat.Text = "Date &format:";
+            //
+            // comboBoxDateFormat
+            //
+            this.comboBoxDateFormat.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxDateFormat.FormattingEnabled = true;
+            this.comboBoxDateFormat.Location = new System.Drawing.Point(74, 178);
+            this.comboBoxDateFormat.Name = "comboBoxDateFormat";
+            this.comboBoxDateFormat.Size = new System.Drawing.Size(190, 21);
+            this.comboBoxDateFormat.TabIndex = 9;
+            //
             // ControlOptions
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -131,6 +151,8 @@
             this.Controls.Add(this.checkBoxAutoCloseGitOnSuccess);
             this.Controls.Add(this.checkBoxTabs);
             this.Controls.Add(this.checkBoxWarnMultipleInstances);
+            this.Controls.Add(this.labelDateFormat);
+            this.Controls.Add(this.comboBoxDateFormat);
             this.Name = "ControlOptions";
             this.Size = new System.Drawing.Size(300, 300);
             this.Tag = "Options";
@@ -149,5 +171,7 @@
         private System.Windows.Forms.Label labelTheme;
         private System.Windows.Forms.ComboBox comboBoxTheme;
         private System.Windows.Forms.Label labelThemeNote;
+        private System.Windows.Forms.Label labelDateFormat;
+        private System.Windows.Forms.ComboBox comboBoxDateFormat;
     }
 }

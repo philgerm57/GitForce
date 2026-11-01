@@ -28,6 +28,13 @@ namespace GitForce.Settings.Panels
             if (comboBoxTheme.SelectedIndex < 0)
                 comboBoxTheme.SelectedItem = ClassTheme.ModeLight;
 
+            // Each date format is shown with the current date as its example
+            comboBoxDateFormat.Left = labelDateFormat.Right + 6;
+            string[] names = { "DD mmm YYYY", "DD/MM/YYYY", "YYYY/MM/DD" };
+            for (int i = 0; i < ClassUtils.DateFormats.Length; i++)
+                comboBoxDateFormat.Items.Add(names[i] + "   (" + ClassUtils.FormatDateOnly(System.DateTime.Now, ClassUtils.DateFormats[i]) + ")");
+            comboBoxDateFormat.SelectedIndex = System.Math.Max(0, System.Array.IndexOf(ClassUtils.DateFormats, Properties.Settings.Default.DateFormat));
+
             // Add the dirty (modified) value changed helper
             checkBoxTabs.CheckStateChanged += ControlDirtyHelper.ControlDirty;
         }
@@ -49,6 +56,9 @@ namespace GitForce.Settings.Panels
             Properties.Settings.Default.WarnIfAdmin = checkBoxWarnIfAdmin.Checked;
             Properties.Settings.Default.AutoCloseGitOnSuccess = checkBoxAutoCloseGitOnSuccess.Checked;
             Properties.Settings.Default.WarnOnDetachedHead = checkBoxWarnOnDetachedHead.Checked;
+
+            if (comboBoxDateFormat.SelectedIndex >= 0)
+                Properties.Settings.Default.DateFormat = ClassUtils.DateFormats[comboBoxDateFormat.SelectedIndex];
 
             // The theme is read once, at startup
             string theme = comboBoxTheme.SelectedItem as string;

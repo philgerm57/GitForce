@@ -13,6 +13,49 @@ namespace GitForce
     /// </summary>
     public static class ClassUtils
     {
+        private static readonly System.Globalization.CultureInfo French = new System.Globalization.CultureInfo("fr-FR");
+
+        /// <summary>
+        /// The date formats to choose from in the options; months are named in French
+        /// </summary>
+        public static readonly string[] DateFormats = { "dd MMM yyyy", "dd/MM/yyyy", "yyyy/MM/dd" };
+
+        /// <summary>
+        /// The date format chosen in the options
+        /// </summary>
+        private static string DateFormat
+        {
+            get
+            {
+                string format = Properties.Settings.Default.DateFormat;
+                return Array.IndexOf(DateFormats, format) >= 0 ? format : DateFormats[0];
+            }
+        }
+
+        /// <summary>
+        /// A date only, in a given format of DateFormats
+        /// </summary>
+        public static string FormatDateOnly(DateTime date, string format)
+        {
+            return date.ToString(format, French);
+        }
+
+        /// <summary>
+        /// A date and time on one line, in the chosen format: 14 oct. 2026 03:16
+        /// </summary>
+        public static string FormatDate(DateTime date)
+        {
+            return date.ToString(DateFormat + " HH:mm", French);
+        }
+
+        /// <summary>
+        /// A date and time with the day of the week, in the chosen format: mercredi 14 oct. 2026 03:16
+        /// </summary>
+        public static string FormatLongDate(DateTime date)
+        {
+            return date.ToString("dddd " + DateFormat + " HH:mm", French);
+        }
+
         /// <summary>
         /// Set of environment variables used by the execution environment
         /// </summary>

@@ -152,7 +152,7 @@ namespace GitForce
 
             cmd.Append(" --pretty=format:");        // Start formatting section
             cmd.Append("%h%x09");                   // Abbreviated commit hash
-            cmd.Append("%ct%x09");                  // Committing time, UNIX-style
+            cmd.Append("%at%x09");                  // Author time, UNIX-style
             cmd.Append("%an%x09");                  // Author name
             cmd.Append("%s");                       // Subject
 

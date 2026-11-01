@@ -11,6 +11,9 @@
     <Setting Name="ShowDotGitFolders" Provider="GitForce.PortableSettingsProvider" Roaming="true" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="DateFormat" Provider="GitForce.PortableSettingsProvider" Roaming="true" Type="System.String" Scope="User">
+      <Value Profile="(Default)">dd MMM yyyy</Value>
+    </Setting>
     <Setting Name="ModernIcons" Provider="GitForce.PortableSettingsProvider" Roaming="true" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>

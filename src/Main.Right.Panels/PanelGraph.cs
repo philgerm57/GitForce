@@ -70,6 +70,17 @@ namespace GitForce.Main.Right.Panels
         private readonly ToolStripButton btAll = new ToolStripButton("All branches") { CheckOnClick = true, Checked = true };
         private readonly ToolStripButton btRefresh = new ToolStripButton("Refresh");
         private readonly ToolStripLabel labelInfo = new ToolStripLabel();
+        private readonly ToolStripTextBox textFind = new ToolStripTextBox { Width = 200, AutoSize = false };
+        private readonly ToolStripButton btFindPrev = new ToolStripButton("Previous") { DisplayStyle = ToolStripItemDisplayStyle.Text };
+        private readonly ToolStripButton btFindNext = new ToolStripButton("Next") { DisplayStyle = ToolStripItemDisplayStyle.Text };
+        private readonly DateTimePicker dateFrom = NewDatePicker();
+        private readonly DateTimePicker dateTo = NewDatePicker();
+
+        /// <summary>
+        /// A search went further than the latest commits: the whole history is loaded
+        /// </summary>
+        private bool loadAll;
+        private string loadedRepo;
         private readonly DataGridView grid = new DataGridView();
         private readonly ContextMenuStrip contextMenu = new ContextMenuStrip();
 
@@ -82,8 +93,28 @@ namespace GitForce.Main.Right.Panels
             foreach (ToolStripButton bt in new[] { btAll, btRefresh })
                 bt.DisplayStyle = ToolStripItemDisplayStyle.Text;
             toolStrip.GripStyle = ToolStripGripStyle.Hidden;
+            textFind.TextBox.PlaceholderText = "Find: SHA, message, author, branch";
+            textFind.ToolTipText = "Enter: next match, Shift+Enter: previous, Esc: clear (Ctrl+F to come here)";
+            textFind.KeyDown += (s, e) =>
+            {
+                if (e.KeyCode == Keys.Enter)
+                    Find(!e.Shift);
+                else if (e.KeyCode == Keys.Escape)
+                    textFind.Clear();
+                else
+                    return;
+                e.Handled = e.SuppressKeyPress = true;
+            };
+            btFindPrev.Click += (s, e) => Find(false);
+            btFindNext.Click += (s, e) => Find(true);
+            dateFrom.ValueChanged += (s, e) => { dirty = true; LoadGraph(); };
+            dateTo.ValueChanged += (s, e) => { dirty = true; LoadGraph(); };
             toolStrip.Items.AddRange(new ToolStripItem[] {
-                new ToolStripLabel("git Graph"), new ToolStripSeparator(), btAll, btRefresh, new ToolStripSeparator(), labelInfo });
+                new ToolStripLabel("git Graph"), new ToolStripSeparator(), btAll, btRefresh, new ToolStripSeparator(),
+                textFind, btFindPrev, btFindNext, new ToolStripSeparator(),
+                new ToolStripLabel("From"), new ToolStripControlHost(dateFrom) { ToolTipText = "Check the box to show only the commits since this date" },
+                new ToolStripLabel("To"), new ToolStripControlHost(dateTo) { ToolTipText = "Check the box to show only the commits until this date" },
+                new ToolStripSeparator(), labelInfo });
 
             grid.Dock = DockStyle.Fill;
             grid.VirtualMode = true;
@@ -231,10 +262,102 @@ namespace GitForce.Main.Right.Panels
                 LoadGraph();
                 return true;
             }
+            if (keyData == (Keys.Control | Keys.F))
+            {
+                textFind.Focus();
+                textFind.SelectAll();
+                return true;
+            }
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
         #region Loading and the lane layout
+
+        private static DateTimePicker NewDatePicker()
+        {
+            return new DateTimePicker
+            {
+                Format = DateTimePickerFormat.Custom, CustomFormat = "dd/MM/yyyy", ShowCheckBox = true, Checked = false, Width = 115
+            };
+        }
+
+        private bool DateFiltered
+        {
+            get { return dateFrom.Checked || dateTo.Checked; }
+        }
+
+        private static int Maximum
+        {
+            get { return Math.Max(Properties.Settings.Default.commitsRetrieveLast, 1000); }
+        }
+
+        /// <summary>
+        /// Only the latest commits are loaded
+        /// </summary>
+        private bool Limited
+        {
+            get { return !Properties.Settings.Default.commitsRetrieveAll && !loadAll && !DateFiltered; }
+        }
+
+        private static bool Matches(GraphRow r, string[] words)
+        {
+            foreach (string word in words)
+            {
+                if (!r.Sha.StartsWith(word, StringComparison.OrdinalIgnoreCase) &&
+                    (r.Subject ?? string.Empty).IndexOf(word, StringComparison.OrdinalIgnoreCase) < 0 &&
+                    (r.Author ?? string.Empty).IndexOf(word, StringComparison.OrdinalIgnoreCase) < 0 &&
+                    !r.Refs.Any(x => x.Name.IndexOf(word, StringComparison.OrdinalIgnoreCase) >= 0))
+                    return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Go to the next or previous commit that has all the words typed (the start of its SHA, or
+        /// in its message, author or branches). When the latest commits have none, the search goes
+        /// on in the whole history.
+        /// </summary>
+        private void Find(bool forward)
+        {
+            string[] words = textFind.Text.Replace("*", " ").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length == 0)
+                return;
+            List<int> matches = FindMatches(words);
+            if (matches.Count == 0 && Limited)
+            {
+                Cursor = Cursors.WaitCursor;
+                loadAll = true;
+                LoadGraph();
+                Cursor = Cursors.Default;
+                matches = FindMatches(words);
+            }
+            if (matches.Count == 0)
+            {
+                labelInfo.Text = "Not found: " + textFind.Text.Trim() + (btAll.Checked ? string.Empty : " (try All branches)") +
+                                 (DateFiltered ? " (between these dates)" : string.Empty);
+                return;
+            }
+            int current = grid.CurrentCell != null ? grid.CurrentCell.RowIndex : (forward ? -1 : rows.Count);
+            int index = forward ? matches.FindIndex(i => i > current) : matches.FindLastIndex(i => i < current);
+            if (index < 0)
+                index = forward ? 0 : matches.Count - 1;    // Start again from the other end
+            int row = matches[index];
+            grid.CurrentCell = grid.Rows[row].Cells[0];
+            if (!grid.Rows[row].Displayed)
+                grid.FirstDisplayedScrollingRowIndex = Math.Max(0, row - 5);
+            labelInfo.Text = "Match " + (index + 1) + " of " + matches.Count;
+            if (App.MainForm != null)
+                App.MainForm.ShowCommitFiles(rows[row].Sha, rows[row].IsStash ? rows[row].ShortSha : null);
+        }
+
+        private List<int> FindMatches(string[] words)
+        {
+            List<int> matches = new List<int>();
+            for (int i = 0; i < rows.Count; i++)
+                if (Matches(rows[i], words))
+                    matches.Add(i);
+            return matches;
+        }
 
         /// <summary>
         /// Read the history and lay it out
@@ -246,15 +369,22 @@ namespace GitForce.Main.Right.Panels
             List<GraphRow> list = new List<GraphRow>();
             if (repo != null)
             {
-                string limit = Properties.Settings.Default.commitsRetrieveAll
-                    ? string.Empty
-                    : " -n " + Math.Max(Properties.Settings.Default.commitsRetrieveLast, 1000);
-                string args = "log --topo-order --decorate=full" + (btAll.Checked ? " --exclude=refs/stash --all" : string.Empty) + limit +
-                              " --format=%H%x1f%h%x1f%P%x1f%an%x1f%ct%x1f%D%x1f%s%x1e";
-                ExecResult result = repo.Run(args);
-                if (result.Success())
-                    list = ParseLog(result.stdout);
-                if (btAll.Checked)
+                if (repo.Path != loadedRepo)
+                    loadAll = false;
+                loadedRepo = repo.Path;
+
+                // Dates choose the commits themselves, so they are not limited to the latest ones
+                string limit = Limited ? " -n " + Maximum : string.Empty;
+                string range = (dateFrom.Checked ? " --since=\"" + dateFrom.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " 00:00:00\"" : string.Empty) +
+                               (dateTo.Checked ? " --until=\"" + dateTo.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " 23:59:59\"" : string.Empty);
+                string args = "log --date-order --decorate=full" + (btAll.Checked ? " --exclude=refs/stash --all" : string.Empty) + limit + range +
+                              " --format=%H%x1f%h%x1f%P%x1f%an%x1f%at%x1f%D%x1f%s%x1e";
+                // Read directly: the whole history of a large repository is several megabytes
+                int code;
+                string output = System.Text.Encoding.UTF8.GetString(DiffViewControl.RunGitBytes(repo.Path, args, out code));
+                if (code == 0)
+                    list = ParseLog(output);
+                if (btAll.Checked && !DateFiltered)
                     AddStashes(repo, list);
             }
             LayoutLanes(list);
@@ -263,7 +393,9 @@ namespace GitForce.Main.Right.Panels
 
             grid.RowCount = 0;
             grid.RowCount = rows.Count;
-            labelInfo.Text = rows.Count + " commits";
+            labelInfo.Text = Limited && rows.Count(r => !r.IsStash) >= Maximum
+                ? "Latest " + Maximum + " commits (Settings > Commits to show more)"
+                : rows.Count + " commits";
             grid.Invalidate();
         }
 
@@ -459,7 +591,7 @@ namespace GitForce.Main.Right.Panels
             {
                 case 0: e.Value = r.Subject; break;
                 case 1: e.Value = r.Author; break;
-                case 2: e.Value = r.Date.ToString("g", CultureInfo.CurrentCulture); break;
+                case 2: e.Value = ClassUtils.FormatDate(r.Date); break;
                 case 3: e.Value = r.ShortSha; break;
             }
         }

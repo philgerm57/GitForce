@@ -91,7 +91,7 @@ namespace GitForce.Main.Right.Panels
 
                 cmd.Append(" --pretty=format:");        // Start formatting section
                 cmd.Append("%h%x09");                   // Abbreviated commit hash
-                cmd.Append("%ct%x09");                  // Committing time, UNIX-style
+                cmd.Append("%at%x09");                  // Author time, UNIX-style
                 cmd.Append("%an%x09");                  // Author name
                 cmd.Append("%s");                       // Subject
                 // Add the branch name using only the first token in order to handle links (br -> br)
@@ -112,11 +112,20 @@ namespace GitForce.Main.Right.Panels
                 //    else
                 //        cmd.Append(" " + branchStr);
                 //}
+                // A SHA names one commit directly, whatever its branch and however old it is
+                string wantedSha = btClearFilter.Enabled ? formFilter.filterSha : string.Empty;
+                if (wantedSha.Length > 0)
+                    cmd.Append(" -1 \"" + wantedSha + "\"");
                 // Limit the number of commits to show
-                if (Properties.Settings.Default.commitsRetrieveAll == false)
+                else if (Properties.Settings.Default.commitsRetrieveAll == false)
                     cmd.Append(" -" + Properties.Settings.Default.commitsRetrieveLast);
 
                 ExecResult result = App.Repos.Current.Run(cmd.ToString());
+                if (!result.Success() && wantedSha.Length > 0)
+                {
+                    listRev.Items.Clear();
+                    App.PrintStatusMessage("No commit found for SHA " + wantedSha, MessageType.Error);
+                }
                 if (result.Success())
                 {
                     string filterSha = btClearFilter.Enabled ? formFilter.filterSha : string.Empty;
@@ -182,7 +191,7 @@ namespace GitForce.Main.Right.Panels
                     continue;
 
                 // Convert the date/time from UNIX second based to C# date structure. The
-                // range is the whole of DateTime, since %ct is negative for a commit dated
+                // range is the whole of DateTime, since %at is negative for a commit dated
                 // before 1970 and repos converted from older systems do carry those. The
                 // test is written the positive way round so that NaN, which TryParse does
                 // accept and which compares false against everything, is rejected too.
@@ -191,7 +200,7 @@ namespace GitForce.Main.Right.Panels
                     !(seconds >= -62135596800.0 && seconds <= 253402300799.0))  // Year 1 .. year 9999
                     continue;
                 DateTime date = Epoch.AddSeconds(seconds).ToLocalTime();
-                cat[1] = String.Format("{0:yyyy/MM/dd  HH:mm:ss}", date);
+                cat[1] = ClassUtils.FormatDate(date);
 
                 // Trim any spaces in the subject line
                 cat[3] = cat[3].Trim();
