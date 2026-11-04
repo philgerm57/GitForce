@@ -34,6 +34,7 @@ namespace GitForce.Main.Left.Panels
         /// </summary>
         private bool expandingForFilter;
         private readonly ToolStripMenuItem menuShowIgnored = new ToolStripMenuItem("Show Ignored Files") { CheckOnClick = true };
+        private readonly ToolStripMenuItem menuFlatList = new ToolStripMenuItem("Flat List (no folders)");
 
         /// <summary>
         /// PanelView constructor
@@ -104,6 +105,9 @@ namespace GitForce.Main.Left.Panels
                 ViewRefresh();
             };
             dropViewMode.DropDownItems.Add(menuShowIgnored);
+            menuFlatList.ToolTipText = "Show the files of any view in one list with their full path, instead of a tree of folders";
+            menuFlatList.Click += BtListViewClick;
+            dropViewMode.DropDownItems.Add(menuFlatList);
 
             App.Refresh += ViewRefresh;
 
@@ -152,7 +156,7 @@ namespace GitForce.Main.Left.Panels
             // Set the view mode text (picked up from the indexed menu combo box)
             viewLabel.Text = dropViewMode.DropDownItems[mode].Text;
 
-            menuSortFilesByExtension.Enabled = btListView.Enabled = App.Repos.Current != null;
+            menuSortFilesByExtension.Enabled = btListView.Enabled = menuFlatList.Enabled = App.Repos.Current != null;
 
             treeView.BeginUpdate();
             treeView.NodesClear();
@@ -161,7 +165,7 @@ namespace GitForce.Main.Left.Panels
             {
                 status = App.Repos.Current.Status;
 
-                btListView.Checked = !status.Repo.IsTreeView;
+                btListView.Checked = menuFlatList.Checked = !status.Repo.IsTreeView;
                 menuSortFilesByExtension.Checked = status.Repo.SortBy == GitDirectoryInfo.SortBy.Extension;
 
                 List<string> files = new List<string>();
@@ -339,12 +343,11 @@ namespace GitForce.Main.Left.Panels
                 // Add the resulting tree to the tree view control
                 treeView.Nodes.Add(node);
 
-                // Assign the icons to the nodes of tree view
-                // In the changed files view, a file that is only staged shows its staged state
-                ClassView.ViewAssignIcon(status, node, false, MarkIgnored(), mode == 7);
+                // Assign the icons to the nodes of tree view. A file that is only staged shows its
+                // staged state, as its folder does: otherwise it would look unmodified
+                ClassView.ViewAssignIcon(status, node, false, MarkIgnored(), true);
                 ClassView.ViewUpdateToolTips(node);
-                if (mode == 7)
-                    ClassView.ViewAssignIcon(status, node, false, MarkIgnored(), true);  // Its tooltips tell staged from not staged
+                ClassView.ViewAssignIcon(status, node, false, MarkIgnored(), true);  // Its tooltips tell staged from not staged
 
                 // Set the first node (root) image according to the view mode
                 node.ImageIndex = mode == 2
@@ -588,7 +591,7 @@ namespace GitForce.Main.Left.Panels
         /// </summary>
         private void BtListViewClick(object sender, EventArgs e)
         {
-            btListView.Checked = status.Repo.IsTreeView;
+            btListView.Checked = menuFlatList.Checked = status.Repo.IsTreeView;
             status.Repo.IsTreeView = !status.Repo.IsTreeView;
             ViewRefresh();
         }

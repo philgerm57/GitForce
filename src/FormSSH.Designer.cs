@@ -184,7 +184,7 @@
             this.groupBox1.Size = new System.Drawing.Size(492, 147);
             this.groupBox1.TabIndex = 13;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Input the passphrases to import";
+            this.groupBox1.Text = "Passphrases (not used: Pageant asks for a passphrase when a key is first used)";
             // 
             // textBoxInputPf
             // 

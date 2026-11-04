@@ -113,15 +113,13 @@ namespace GitForce
             // Load list of keys and passphrases to send to the pageant process
             List<string> keys = Properties.Settings.Default.PuTTYKeys.
                 Split((",").ToCharArray(), StringSplitOptions.RemoveEmptyEntries).ToList();
-            List<string> pfs = GetPassPhrases();
-
             StringBuilder args = new StringBuilder();
 
-            // Passphrases must be specified first in the list of arguments
-            foreach (string s in pfs)
-                args.Append(" -x \"" + s + "\"");
-
-            // Followed by the list of keys to load
+            // The Pageant of PuTTY takes no passphrase on its command line (the "-x" option was
+            // only in the modified Pageant that GitForce used to ship). The keys are loaded
+            // encrypted: Pageant asks for the passphrase of a key the first time it is used.
+            if (keys.Count > 0)
+                args.Append(" --encrypted");
             foreach (string s in keys)
                 args.Append(" \"" + s + "\"");
 

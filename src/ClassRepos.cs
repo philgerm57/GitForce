@@ -168,9 +168,10 @@ namespace GitForce
                             Repos = newRepos;
                             ProjectLayout = newLayout;
                             ProjectLayout.Rebuild(Repos);
-                            // Upon load, set the current based on the default repo
+                            // Upon load, go back to the repo selected last, or else to the default repo
                             Default = Repos.Find(r => r.Path == defaultRepo);
-                            SetCurrent(Default);
+                            string last = Properties.Settings.Default.LastRepo;
+                            SetCurrent(Repos.Find(r => r.Path == last) ?? Default);
                         }
                         return true;
                     }
@@ -306,7 +307,10 @@ namespace GitForce
             // Assign the new 'current' repo but if null, try to find the first valid repo
             Current = (repo == null && Repos.Count > 0)? Repos[0] : repo;
             if (Current != null)
+            {
                 Current.Remotes.Refresh(Current);   // Refresh the list of remote repos
+                Properties.Settings.Default.LastRepo = Current.Path;
+            }
         }
 
         /// <summary>
