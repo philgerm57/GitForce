@@ -58,6 +58,24 @@ namespace GitForce
         private readonly List<TreeNode> _selectedNodes;
 
         /// <summary>
+        /// Text color of the nodes that have their own, given back to them when they are deselected
+        /// </summary>
+        private readonly Dictionary<TreeNode, Color> _nodeColors = new Dictionary<TreeNode, Color>();
+
+        /// <summary>
+        /// Give a node its own text color (Color.Empty: the color of the tree)
+        /// </summary>
+        public void SetNodeColor(TreeNode node, Color color)
+        {
+            if (color.IsEmpty)
+                _nodeColors.Remove(node);
+            else
+                _nodeColors[node] = color;
+            if (!_selectedNodes.Contains(node))
+                node.ForeColor = color.IsEmpty ? ForeColor : color;
+        }
+
+        /// <summary>
         /// Public property of the TreeViewEx to return or set a list of selected nodes
         /// </summary>
         public List<TreeNode> SelectedNodes
@@ -180,7 +198,8 @@ namespace GitForce
             {
                 _selectedNodes.Remove(node);
                 node.BackColor = BackColor;
-                node.ForeColor = ForeColor;
+                Color own;
+                node.ForeColor = _nodeColors.TryGetValue(node, out own) ? own : ForeColor;
             }
         }
 
@@ -224,6 +243,7 @@ namespace GitForce
         public void NodesClear()
         {
             _selectedNodes.Clear();
+            _nodeColors.Clear();
             SelectedNode = null;
             Nodes.Clear();
             OnAfterSelect(null);

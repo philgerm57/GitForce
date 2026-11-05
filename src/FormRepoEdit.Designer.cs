@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             System.Windows.Forms.TreeNode treeNode1 = new System.Windows.Forms.TreeNode("User");
-            System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("Gitignore");
+            System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("Local Excludes");
             System.Windows.Forms.TreeNode treeNode3 = new System.Windows.Forms.TreeNode("Git config");
             System.Windows.Forms.TreeNode treeNode4 = new System.Windows.Forms.TreeNode("Repo Objects", new System.Windows.Forms.TreeNode[] {
             treeNode1,
@@ -65,7 +65,7 @@
             treeNode1.Text = "User";
             treeNode2.Name = "Node2";
             treeNode2.Tag = "Gitignore";
-            treeNode2.Text = "Gitignore";
+            treeNode2.Text = "Local Excludes";
             treeNode3.Name = "Node0";
             treeNode3.Tag = "Gitconfig";
             treeNode3.Text = "Git config";

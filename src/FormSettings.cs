@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Forms;
 using GitForce.Settings.Panels;
 
@@ -35,6 +36,7 @@ namespace GitForce
             { "Status", new ControlStatus() },
             { "Commits", new ControlCommits() },
             { "Gitignore", new ControlGitignore() },
+            { "RepoGitignore", new ControlRepoGitignore() },
             { "Gitconfig", new ControlGitconfig() },
             { "Files", new ControlFiles() },
             { "ViewEdit", new ControlViewEdit() },
@@ -66,6 +68,10 @@ namespace GitForce
                 (key.Value as IUserSettings).Init(config);
                 key.Value.Dock = DockStyle.Fill;
             }
+
+            // The .gitignore of the current repository, just before the global excludes file
+            TreeNode excludes = treeSections.Nodes[0].Nodes.Cast<TreeNode>().First(n => (n.Tag as string) == "Gitignore");
+            treeSections.Nodes[0].Nodes.Insert(excludes.Index, new TreeNode(".gitignore") { Tag = "RepoGitignore" });
 
             // Expand the tree and select the first node
             treeSections.ExpandAll();

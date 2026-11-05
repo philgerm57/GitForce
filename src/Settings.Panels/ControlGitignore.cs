@@ -15,6 +15,11 @@ namespace GitForce.Settings.Panels
         public ControlGitignore()
         {
             InitializeComponent();
+            UserControlEditGitignore.AddHelp(this, userControlEditGitignore,
+                "Git excludes file (git config core.excludesFile): patterns ignored in ALL your repositories, on this " +
+                "computer only. It is never committed, so it suits files that only you produce: editor and IDE files " +
+                "(.vs/, *.suo, .idea/), system files (Thumbs.db, desktop.ini), personal notes. Patterns that belong to a " +
+                "project go in its .gitignore file instead (the \".gitignore\" page).");
         }
 
         /// <summary>

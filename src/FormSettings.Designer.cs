@@ -30,7 +30,7 @@
         {
             System.Windows.Forms.TreeNode treeNode1 = new System.Windows.Forms.TreeNode("User");
             System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("Commits");
-            System.Windows.Forms.TreeNode treeNode3 = new System.Windows.Forms.TreeNode("Gitignore");
+            System.Windows.Forms.TreeNode treeNode3 = new System.Windows.Forms.TreeNode("Git Excludes File");
             System.Windows.Forms.TreeNode treeNode4 = new System.Windows.Forms.TreeNode("Gitconfig");
             System.Windows.Forms.TreeNode treeNode5 = new System.Windows.Forms.TreeNode("Status");
             System.Windows.Forms.TreeNode treeNode6 = new System.Windows.Forms.TreeNode("GitForce Objects", new System.Windows.Forms.TreeNode[] {
@@ -122,7 +122,7 @@
             treeNode2.Text = "Commits";
             treeNode3.Name = "Node0";
             treeNode3.Tag = "Gitignore";
-            treeNode3.Text = "Gitignore";
+            treeNode3.Text = "Git Excludes File";
             treeNode4.Name = "Node0";
             treeNode4.Tag = "Gitconfig";
             treeNode4.Text = "Gitconfig";

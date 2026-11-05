@@ -13,6 +13,10 @@ namespace GitForce.Repo.Edit.Panels
         public ControlGitignore()
         {
             InitializeComponent();
+            UserControlEditGitignore.AddHelp(this, userControlEditGitignore,
+                "Local excludes of this repository (.git/info/exclude): patterns ignored in this repository only, " +
+                "on this computer only. The file is never committed. Patterns for everyone working on the repository " +
+                "go in its .gitignore file instead (Settings, \".gitignore\" page).");
         }
 
         /// <summary>

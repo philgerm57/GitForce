@@ -223,6 +223,19 @@ namespace GitForce
                             tn.ImageIndex = (int)Staticons[icon];
                         else
                             tn.ImageIndex = 0;
+
+                        // Staged files in color: green when the file is just as it was staged,
+                        // orange when it was changed again since (Update Changelist is needed)
+                        TreeViewEx tree = tn.TreeView as TreeViewEx;
+                        if (combined && tree != null)
+                        {
+                            char x = status.Xcode(name), y = status.Ycode(name);
+                            bool staged = status.IsMarked(name) && x != ' ' && x != '?' && x != '!';
+                            bool dark = ClassTheme.IsDark;
+                            tree.SetNodeColor(tn, !staged ? Color.Empty
+                                : y == ' ' ? (dark ? Color.FromArgb(110, 200, 120) : Color.FromArgb(0, 128, 0))
+                                : (dark ? Color.FromArgb(235, 165, 70) : Color.FromArgb(200, 100, 0)));
+                        }
                     }
                     else
                     {
